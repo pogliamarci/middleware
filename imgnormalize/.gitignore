@@ -19,3 +19,9 @@
 *.exe
 *.out
 *.app
+
+# CMake's build directory
+build/
+
+# Executable file
+imgnormalize
