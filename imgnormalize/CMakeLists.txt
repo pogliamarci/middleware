@@ -1,10 +1,15 @@
 cmake_minimum_required (VERSION 2.6)
 project(imgnormalize)
 
-file(GLOB imgnormalize_SRC "*.cc")
+file(GLOB imgnormalize_C "*.c")
+file(GLOB imgnormalize_CPP "*.cc")
 
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -std=c++11")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
@@ -18,7 +23,7 @@ endif()
 
 include_directories("${PROJECT_BINARY_DIR} ${MPI_COMPILE_FLAGS}")
 
-add_executable(imgnormalize ${imgnormalize_SRC})
+add_executable(imgnormalize ${imgnormalize_C} ${imgnormalize_CPP})
 target_link_libraries(imgnormalize ${MPI_LIBRARIES})
 
 if(MPI_COMPILE_FLAGS)
