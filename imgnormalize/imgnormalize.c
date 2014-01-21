@@ -8,10 +8,11 @@
 #include <omp.h>
 
 #include "distsys_image.h"
+#include "imgnormalize_core.h"
 
 char* fname = NULL;
-int min = -1;
-int max = -1;
+int newMin = -1;
+int newMax = -1;
 
 inline void wrap_exit(int status)
 {
@@ -36,10 +37,10 @@ void process_cli(int argc, char** argv)
     {
         switch(c) {
             case 'm':
-                min = atoi(optarg);
+                newMin = atoi(optarg);
                 break;
             case 'M':
-                max = atoi(optarg);
+                newMax = atoi(optarg);
                 break;
             case 'f':
                 fname = optarg;
@@ -50,7 +51,7 @@ void process_cli(int argc, char** argv)
                 break;
         }
     }
-    if(err || min == -1 || max == -1 || fname == NULL)
+    if(err || newMin == -1 || newMax == -1 || fname == NULL)
     {
         print_usage(argc, argv);
         wrap_exit(-1);
@@ -87,7 +88,7 @@ int main(int argc, char** argv)
 
     int* sendcnts = NULL;
     int* displs = NULL;
-    int* recvbuf = NULL;
+    uint8_t* recvbuf = NULL;
     int recvcount;
     int elems_per_proc;
     int add_to_last;
@@ -122,16 +123,24 @@ int main(int argc, char** argv)
     MPI_Scatterv(img->data, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    //TODO compute min and max, send 'em out
-    // int min, max;
-    // normalize_compute_bounds(header, recvbuf, recvcount, &min, &max);
-    //TODO step 3 -> send results (MPI_Reduce on both min and max...)
-    //TODO step 4 -> generate normalized image
+    int* bounds = malloc(2*sizeof(int)*header->channels); // min and max
+    int* min = malloc(sizeof(int)*header->channels);
+    int* max = malloc(sizeof(int)*header->channels);
+    image_get_bounds(header, recvcount, recvbuf, min, max);
+    MPI_Reduce(min, &(bounds[0]), header->channels, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(max, &(bounds[header->channels]), header->channels, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Bcast(bounds, 2 * header->channels, MPI_INT, 0, MPI_COMM_WORLD);
+
+    image_normalize(header, recvcount, recvbuf, &(bounds[0]),
+            &(bounds[header->channels]), newMin, newMax);
+
     //TODO step 5 -> send normalized image
     //TODO step 6 -> save && free image
 
     if(rank == 0)
+    {
         image_free(img);
+    }
     free(sendcnts);
     free(displs);
     free(header);

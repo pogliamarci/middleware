@@ -1,3 +1,6 @@
+#ifndef _DISTSYS_IMAGE_H
+#define _DISTSYS_IMAGE_H
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -39,3 +42,5 @@ int image_write(const char* path, image_t image);
 void image_free(image_t* image);
 
 int image_num_pixels(const img_header_t* header);
+
+#endif
