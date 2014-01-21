@@ -1,19 +1,15 @@
-#include <iostream>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
 
 #include <mpi.h>
 #include <omp.h>
 
-#include <unistd.h>
-#include <stdint.h>
-
-#include "imgutils.h"
+#include "distsys_image.h"
 
 char* fname = NULL;
 int min = -1;
 int max = -1;
-
-using namespace imgnormalize;
 
 inline void wrap_exit(int status)
 {
@@ -28,7 +24,7 @@ inline void wrap_exit(int status)
 
 void print_usage(int argc, char** argv)
 {
-    std::cout << "Usage: " << argv[0] << " -b min:max -f filename" << std::endl;
+    fprintf(stderr, "Usage: %s -b min:max -f filename\n", argv[0]);
 }
 
 void process_cli(int argc, char** argv)
@@ -66,21 +62,17 @@ int main(int argc, char** argv)
     int rank;
     int size;
 
-    uint8_t* img;
-
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if(rank == 0)
     {
         process_cli(argc, argv);
-        img_t img = load(fname);
         // step 2 -> parallel computation of min and max
         // step 3 -> send results
         // step 4 -> generate normalized image
         // step 5 -> send normalized image
-        // step 6 -> save
-        imgfree(img);
+        // step 6 -> save && free image
     }
 
     wrap_exit(0);
