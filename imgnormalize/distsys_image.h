@@ -27,7 +27,7 @@ int pixelSize(img_header_t header);
  * 	KO: -1
  *      OK: 0
  */
-int image_read(const char* path, image_t* image);
+int image_read(const char* path, image_t** image);
 
 /*
  * Returned values
@@ -35,3 +35,7 @@ int image_read(const char* path, image_t* image);
  *      OK: 0
  */
 int image_write(const char* path, image_t image);
+
+void image_free(image_t* image);
+
+int image_num_pixels(const img_header_t* header);
