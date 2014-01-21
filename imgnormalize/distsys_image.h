@@ -28,14 +28,14 @@ int pixelSize(img_header_t header);
 /*
  * Returned values
  * 	KO: -1
- *      OK: 0
+ *      OK: 1
  */
 int image_read(const char* path, image_t** image);
 
 /*
  * Returned values
  *      KO: -1
- *      OK: 0
+ *      OK: 1
  */
 int image_write(const char* path, image_t image);
 
