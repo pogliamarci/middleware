@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 
-/****** Data types ******/
+/****** Data types *******/
 
 typedef struct {
 	size_t width;
@@ -14,11 +14,11 @@ typedef struct {
 
 typedef struct {
 	img_header_t header;
-	uint8_t** data;
+	uint8_t* data;
 }image_t;
 
 
-/****** Functions *****/
+/****** Functions ******/
 
 int pixelSize(img_header_t header);
 
@@ -27,11 +27,11 @@ int pixelSize(img_header_t header);
  * 	KO: -1
  *      OK: 0
  */
-int read(char* path, image_t image);
+int image_read(const char* path, image_t image);
 
 /*
  * Returned values
  *      KO: -1
  *      OK: 0
  */
-int write(char* path, image_t image);
+int image_write(const char* path, image_t* image);
