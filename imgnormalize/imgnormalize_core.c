@@ -6,7 +6,6 @@
 #define DISPLACEMENT(_h) ((_h->channels))
 #define MIN(_x, _y) ((_x) < (_y) ? (_x) : (_y))
 #define MAX(_x, _y) ((_x) > (_y) ? (_x) : (_y))
-#define VALUE_DISPL(_i, _channels) (((_channels) == 1) ? (_i) : ((_i) + 2))
 
 void image_get_bounds(const img_header_t* head, const int slice_size,
         uint8_t* data, int* min, int* max)
@@ -56,8 +55,20 @@ void image_normalize(const img_header_t* head, const int slice_size,
 #pragma omp parallel for private(i)
     for(i = 0; i < slice_size; i+=displ)
     {
-        uint8_t pixel = data[VALUE_DISPL(i, channels)];
-        pixel = (pixel - min) * (newMax - newMin) / (max - min) + newMin;
-        data[VALUE_DISPL(i, channels)] = pixel;
+        if(channels == 1)
+            data[i] = (data[i] - min) * (newMax - newMin) / (max - min) + newMin;
+        else {
+            rgb_point_t rgb;
+            hsv_point_t hsv;
+            rgb.r = data[i];
+            rgb.g = data[i+1];
+            rgb.b = data[i+2];
+            hsv = rgb2hsv(&rgb);
+            hsv.v = (hsv.v - min) * (newMax - newMin) / (max - min) + newMin;
+            rgb = hsv2rgb(&hsv);
+            data[i] = rgb.r;
+            data[i+1] = rgb.g;
+            data[i+2] = rgb.b;
+        }
     }
 }
