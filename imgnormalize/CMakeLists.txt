@@ -26,6 +26,10 @@ include_directories("${PROJECT_BINARY_DIR} ${MPI_COMPILE_FLAGS}")
 add_executable(imgnormalize ${imgnormalize_C} ${imgnormalize_CPP})
 target_link_libraries(imgnormalize ${MPI_LIBRARIES})
 
+if(UNIX)
+    target_link_libraries(imgnormalize m)
+endif()
+
 if(MPI_COMPILE_FLAGS)
     set_target_properties(imgnormalize PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
 endif()
