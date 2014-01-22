@@ -3,12 +3,6 @@
 
 #include "distsys_image.h"
 
-int pixelSize(img_header_t header)
-{
-    //TODO
-    return header.channels;
-}
-
 int image_read(const char* path, image_t** image)
 {
     //TODO

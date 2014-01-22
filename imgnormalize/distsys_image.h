@@ -23,8 +23,6 @@ typedef struct {
 
 /****** Functions ******/
 
-int pixelSize(img_header_t header);
-
 /*
  * Returned values
  * 	KO: -1
