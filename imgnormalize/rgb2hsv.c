@@ -19,7 +19,7 @@ hsv_point_t rgb2hsv(const rgb_point_t* rgb)
 
     const float FLOAT_TO_BYTE = 255.0f;
     const float BYTE_TO_FLOAT = 1.0f / FLOAT_TO_BYTE;
-    float ANGLE_TO_UNIT = 1.0f / (6.0f * fDelta);	// Make the Hues between 0.0 to 1.0 instead of 6.0
+    float angle_to_unit;
 
     // Convert from 8-bit integers to floats.
     fR = rgb->r * BYTE_TO_FLOAT;
@@ -64,17 +64,18 @@ hsv_point_t rgb2hsv(const rgb_point_t* rgb)
         }
     }
     fDelta = fMax - fMin;
+    angle_to_unit = 1.0f / (6.0f * fDelta);     // Make the Hues between 0.0 to 1.0 instead of 6.0
     fV = fMax;                      // Value (Brightness).
     if (iMax != 0) {                // Make sure it's not pure black.
         fS = fDelta / fMax;         //Saturation.
         if (iMax == rgb->r) {       // between yellow and magenta.
-            fH = (fG - fB) * ANGLE_TO_UNIT;
+            fH = (fG - fB) * angle_to_unit;
         }
         else if (iMax == rgb->g) {  // between cyan and yellow.
-            fH = (2.0f/6.0f) + ( fB - fR ) * ANGLE_TO_UNIT;
+            fH = (2.0f/6.0f) + ( fB - fR ) * angle_to_unit;
         }
         else {                      // between magenta and cyan.
-            fH = (4.0f/6.0f) + ( fR - fG ) * ANGLE_TO_UNIT;
+            fH = (4.0f/6.0f) + ( fR - fG ) * angle_to_unit;
         }
         // Wrap outlier Hues around the circle.
         if (fH < 0.0f)
@@ -120,6 +121,7 @@ rgb_point_t hsv2rgb(const hsv_point_t* hsv)
 {
     float fH, fS, fV;
     float fR, fG, fB;
+    int bR, bG, bB;
 
     rgb_point_t rgb;
 
@@ -187,9 +189,9 @@ rgb_point_t hsv2rgb(const hsv_point_t* hsv)
     }
 
     // Convert from floats to 8-bit integers
-    int bR = (int)(fR * FLOAT_TO_BYTE);
-    int bG = (int)(fG * FLOAT_TO_BYTE);
-    int bB = (int)(fB * FLOAT_TO_BYTE);
+    bR = (int)(fR * FLOAT_TO_BYTE);
+    bG = (int)(fG * FLOAT_TO_BYTE);
+    bB = (int)(fB * FLOAT_TO_BYTE);
 
     // Clip the values to make sure it fits within the 8bits.
     if (bR > 255)

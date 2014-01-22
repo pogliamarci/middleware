@@ -15,15 +15,9 @@ char* fname = NULL;
 int newMin = -1;
 int newMax = -1;
 
-inline void wrap_exit(int status)
+inline void mpiabort(int status)
 {
-    if(status == 0)
-    {
-        MPI_Finalize();
-        exit(status);
-    } else {
-        MPI_Abort(MPI_COMM_WORLD, status);
-    }
+    MPI_Abort(MPI_COMM_WORLD, status);
 }
 
 void print_usage(int argc, char** argv)
@@ -57,7 +51,7 @@ void process_cli(int argc, char** argv)
     if(err || newMin == -1 || newMax == -1 || fname == NULL)
     {
         print_usage(argc, argv);
-        wrap_exit(-1);
+        mpiabort(-1);
     }
     if(outfname == NULL)
     {
@@ -84,6 +78,10 @@ int main(int argc, char** argv)
     int i;
     int min, max;
 
+    MPI_Datatype types[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+    MPI_Datatype img_header_mpi_t;
+    MPI_Aint offset[4];
+
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -95,9 +93,6 @@ int main(int argc, char** argv)
 
     /* create a type for struct image_header_t */
     /* TODO move in another compilation unit, maybe near the definition of img_header_t... */
-    MPI_Datatype types[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
-    MPI_Datatype img_header_mpi_t;
-    MPI_Aint offset[4];
     offset[0] = offsetof(img_header_t, width);
     offset[1] = offsetof(img_header_t, height);
     offset[2] = offsetof(img_header_t, channels);
@@ -108,7 +103,7 @@ int main(int argc, char** argv)
     if((header = malloc(sizeof(img_header_t))) == NULL)
     {
         fprintf(stderr, "Malloc can't allocate memory\n");
-        wrap_exit(-1);
+        mpiabort(-1);
     }
 
     if(rank == 0)
@@ -116,7 +111,7 @@ int main(int argc, char** argv)
         if(!image_read(fname, &img))
         {
             fprintf(stderr, "Malloc can't allocate memory\n");
-            wrap_exit(-1);
+            mpiabort(-1);
         }
         /* Fill in header */
         memcpy(header, &(img->header), sizeof(img_header_t));
@@ -129,7 +124,7 @@ int main(int argc, char** argv)
     if(sendcnts == NULL || displs == NULL)
     {
         fprintf(stderr, "Malloc can't allocate memory\n");
-        wrap_exit(-1);
+        mpiabort(-1);
     }
     elems_per_proc = image_num_pixels(header) / size;
     add_to_last = image_num_pixels(header) % size;
@@ -167,6 +162,7 @@ int main(int argc, char** argv)
     free(sendcnts);
     free(displs);
     free(header);
-    wrap_exit(0);
+    MPI_Finalize();
+    return 0;
 }
 

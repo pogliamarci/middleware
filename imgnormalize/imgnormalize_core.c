@@ -29,10 +29,11 @@ void image_get_bounds(const img_header_t* head, const int slice_size,
                 loc_max = MAX(data[i], loc_max);
             } else {
                 rgb_point_t rgb;
+                hsv_point_t hsv;
                 rgb.r = data[i];
                 rgb.g = data[i+1];
                 rgb.b = data[i+2];
-                hsv_point_t hsv = rgb2hsv(&rgb);
+                hsv = rgb2hsv(&rgb);
                 loc_min = MIN(hsv.v, loc_min);
                 loc_max = MAX(hsv.v, loc_max);
             }
