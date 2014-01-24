@@ -11,7 +11,6 @@ typedef struct {
 	size_t width;
 	size_t height;
 	size_t channels;
-	size_t depth;
 }img_header_t;
 
 
