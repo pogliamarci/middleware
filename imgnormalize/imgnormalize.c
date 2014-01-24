@@ -78,9 +78,9 @@ int main(int argc, char** argv)
     int i;
     int min, max;
 
-    MPI_Datatype types[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+    MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_INT};
     MPI_Datatype img_header_mpi_t;
-    MPI_Aint offset[4];
+    MPI_Aint offset[3];
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -96,7 +96,6 @@ int main(int argc, char** argv)
     offset[0] = offsetof(img_header_t, width);
     offset[1] = offsetof(img_header_t, height);
     offset[2] = offsetof(img_header_t, channels);
-    offset[3] = offsetof(img_header_t, depth);
     MPI_Type_create_struct(nitems, blocklengths, offset, types, &img_header_mpi_t);
     MPI_Type_commit(&img_header_mpi_t);
 
