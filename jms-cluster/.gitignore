@@ -10,4 +10,4 @@ release.properties
 *.jar
 *.war
 *.ear
-
+target/*
