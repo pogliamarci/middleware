@@ -4,37 +4,48 @@
 
 #include "distsys_image.h"
 
+
 int image_read(const char* path, image_t** image)
 {
 	FILE* fp;
-	BITMAPFILEHEADER bitmapFileHeader;
-	BITMAPINFOHEADER bitmapInfoHeader;
+	char buff[71];
+	int i;
 
 	fp = fopen(path, "rb");
-	
+
 	if(fp == NULL)
 		return -1;
 
-	fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, fp);
+	fgets(buff, sizeof(buff), fp);
 
-	//verify that this is a bmp file by check bitmap id
-    	if (bitmapFileHeader.bfType != 0x4D42)
-    	{
-        	fclose(fp);
-        	return -1;
-    	}
-
-	// read the bitmap info header
-	fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, fp);
-
-	(*image)->header.width = bitmapInfoHeader.biWidth;
-	(*image)->header.height = bitmapInfoHeader.biHeight;
-	(*image)->header.channels = 1; // bitmapInfoHeader.boh;
-
-	// move file point to the begging of bitmap data
-	fseek(fp, bitmapFileHeader.bfOffBits, SEEK_SET);
+	// check the image format
+    	if (buff[0] != 'P' || (buff[1] != '2' && buff[1] != '3'))
+         	return -1;
 
 	*image = (image_t*) malloc(sizeof(image_t));
+
+	if(buff[1] == '2')
+		((*image)->header).channels = 1;
+	else
+		((*image)->header).channels = 3;
+
+    	// skip comments
+	do
+	{
+    		fgets(buff, sizeof(buff), fp);
+    	} while(buff[0] == '#');
+
+	for(i = 0; buff[i] != '\0'; i++)
+		if(buff[i] == ' ')
+		{
+			buff[i] = '\0';
+			break;
+		}
+	((*image)->header).width = atoi(buff);
+	((*image)->header).height = atoi(buff+i+1);
+
+	// skip maximum value
+	fgets(buff, sizeof(buff), fp);
 
 	(*image)->data = (uint8_t*) malloc(image_num_pixels((*image)->header) * sizeof(uint8_t));
 
@@ -46,9 +57,13 @@ int image_read(const char* path, image_t** image)
         	return -1;
 	}
 
-	fread((*image)->data, sizeof(uint8_t), image_num_pixels((*image)->header), fp);
+	for(i = 0; !feof(fp); i++)
+	{
+		fgets(buff, sizeof(buff), fp);
+		(*image)->data[i] = atoi(buff);
+	}
 
-	// make sure bitmap image data was read
+	// make sure ppm image data was read
     	if ((*image)->data == NULL)
     	{
         	fclose(fp);
@@ -60,19 +75,33 @@ int image_read(const char* path, image_t** image)
 	return 1;
 }
 
+
 int image_write(const char* path, image_t image)
 {
 	FILE* fp;
+	char buff[71];
+	int i;
 
         fp = fopen(path, "wb");
 
         if(fp == NULL)
                 return -1;
 
-	//fwrite();
+	if(image.header.channels == 1)
+		fputs("P2\n", fp);
+	else
+		fputs("P3\n", fp);
 
-	fwrite(image.data, sizeof(uint8_t), image_num_pixels(image.header), fp);
+	fputs("# middleware project\n", fp);
+	fprintf(fp, "%d %d\n", image.header.width, image.header.height);
+	fprintf(fp, "%d\n", 255);
 
+	for(i = 0; i < image_num_pixels(image.header); i++)
+        {
+		snprintf(buff, 71, "%d\n", image.data[i]);
+                fputs(buff, fp);
+        }
+	
         fclose(fp);
 
         return 1;
@@ -80,7 +109,6 @@ int image_write(const char* path, image_t image)
 
 void image_free(image_t* image)
 {
-    //TODO
     free(image->data);
     free(image);
 }
