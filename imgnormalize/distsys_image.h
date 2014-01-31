@@ -8,11 +8,19 @@
 
 /****** Data types *******/
 
+enum img_fileformat {
+    PLAIN_PPM,
+    PPM
+};
 
+//TODO the fileformat field hasn't been converted
+//in the MPI type. This doesn't matter due to how structures
+//are written in memory (i.e., it is the last field...)
 typedef struct {
 	int width;
 	int height;
 	uint8_t channels;
+    enum img_fileformat format;
 }img_header_t;
 
 

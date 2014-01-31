@@ -12,7 +12,6 @@ int image_read(const char* path, image_t** image)
     FILE* fp;
     char buff[71];
     int i;
-    int type;
 
     fp = fopen(path, "rb");
 
@@ -31,19 +30,19 @@ int image_read(const char* path, image_t** image)
         switch(buff[1]) {
             case '2':
                 ((*image)->header).channels = 1;
-                type = PLAIN_PPM;
+                ((*image)->header).format = PLAIN_PPM;
                 break;
             case '3':
                 ((*image)->header).channels = 3;
-                type = PLAIN_PPM;
+                ((*image)->header).format = PLAIN_PPM;
                 break;
             case '5':
                 ((*image)->header).channels = 1;
-                type = PPM;
+                ((*image)->header).format = PPM;
                 break;
             case '6':
                 ((*image)->header).channels = 3;
-                type = PPM;
+                ((*image)->header).format = PPM;
                 break;
             default:
                 fprintf(stderr, "Unknown file format\n");
@@ -69,8 +68,14 @@ int image_read(const char* path, image_t** image)
     ((*image)->header).width = atoi(buff);
     ((*image)->header).height = atoi(buff+i+1);
 
-    // skip maximum value
+    // check if maximum depth is less than a single byte
     fgets(buff, sizeof(buff), fp);
+    if(atoi(buff) > 255)
+    {
+        fprintf(stderr, "This program supports 8-bit grayscale and 24-bit RGB images\n");
+        goto img_err;
+    }
+    printf("%d\n", atoi(buff));
 
     (*image)->data = (uint8_t*) malloc(image_num_pixels((*image)->header) * sizeof(uint8_t));
 
@@ -81,7 +86,7 @@ int image_read(const char* path, image_t** image)
         goto img_err;
     }
 
-    switch(type)
+    switch(((*image)->header).format)
     {
         case PLAIN_PPM:
             for(i = 0; !feof(fp); i++)
@@ -133,19 +138,40 @@ int image_write(const char* path, image_t image)
     if(fp == NULL)
         return -1;
 
-    if(image.header.channels == 1)
-        fputs("P2\n", fp);
-    else
-        fputs("P3\n", fp);
+    switch(image.header.format)
+    {
+        case PPM:
+            if(image.header.channels == 1)
+                fputs("P5\n", fp);
+            else fputs("P6\n", fp);
+            break;
+        case PLAIN_PPM:
+            if(image.header.channels == 1)
+                fputs("P2\n", fp);
+            else
+                fputs("P3\n", fp);
+        default:
+            break;
+    }
 
-    fputs("# middleware project\n", fp);
     fprintf(fp, "%d %d\n", image.header.width, image.header.height);
     fprintf(fp, "%d\n", 255);
 
-    for(i = 0; i < image_num_pixels(image.header); i++)
+    switch(image.header.format)
     {
-        snprintf(buff, 71, "%d\n", image.data[i]);
-        fputs(buff, fp);
+        case PPM:
+            for(i = 0; i < image_num_pixels(image.header); i++)
+            {
+                fputc(image.data[i], fp);
+            }
+            break;
+        case PLAIN_PPM:
+            for(i = 0; i < image_num_pixels(image.header); i++)
+            {
+                snprintf(buff, 71, "%d\n", image.data[i]); //TODO cosa diavolo e' 71??
+                fputs(buff, fp);
+            }
+            break;
     }
 
     fclose(fp);
