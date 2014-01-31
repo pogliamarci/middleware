@@ -26,7 +26,6 @@ int image_read(const char* path, image_t** image)
 
     // check the image format
     *image = (image_t*) malloc(sizeof(image_t));
-    printf("Magic number: %c %c\n", buff[0], buff[1]);
     if(buff[0] == 'P')
     {
         switch(buff[1]) {
