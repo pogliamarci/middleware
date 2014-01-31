@@ -87,10 +87,7 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if(rank == 0)
-    {
-        process_cli(argc, argv);
-    }
+    process_cli(argc, argv);
 
     /* create a type for struct image_header_t */
     /* TODO move in another compilation unit, maybe near the definition of img_header_t... */
@@ -116,15 +113,12 @@ int main(int argc, char** argv)
             mpiabort(-1);
         }
 
-
-        image_write(outfname, *img);
-        return 0;
-
         /* Fill in header */
         memcpy(header, &(img->header), sizeof(img_header_t));
         *header = img->header;
     }
 
+    /* Broadcast the header to every process */
     MPI_Bcast(header, 1, img_header_mpi_t, 0, MPI_COMM_WORLD);
 
     sendcnts = malloc(size*sizeof(int));
@@ -134,22 +128,28 @@ int main(int argc, char** argv)
         fprintf(stderr, "Malloc can't allocate memory\n");
         mpiabort(-1);
     }
+
+    /* Build the array with the size and the displacement of each process's task */
     elems_per_proc = image_num_pixels(*header) / size;
     add_to_last = image_num_pixels(*header) % size;
     for(i=0; i<size; i++)
     {
-        sendcnts[i] = elems_per_proc * header->channels;
-        displs[i]   = elems_per_proc * header->channels * i;
+        sendcnts[i] = elems_per_proc;
+        displs[i]   = elems_per_proc * i;
     }
     sendcnts[size-1] += add_to_last;
+
     recvcount = sendcnts[rank];
 
     /* allocate buffers to accomodate data reception */
-    recvbuf = malloc(sizeof(uint8_t) * header->channels * sendcnts[rank]);
+    recvbuf = malloc(sendcnts[rank] * sizeof(uint8_t));
+    if(!recvbuf) {
+        fprintf(stderr, "Malloc can't allocate memory\n");
+        mpiabort(-1);
+    }
 
     MPI_Scatterv(img->data, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-
 
     // Assumption for now (to be eventually relaxed...): in case of an RGB color
     // image we normalize the V channel after converting it in the HSV color space.
