@@ -27,8 +27,8 @@ void print_usage(int argc, char** argv)
 
 void process_cli(int argc, char** argv)
 {
-    int c, err;
-    while((c = getopt(argc, argv, "m:M:f:")) != -1)
+    int c, err = 0;
+    while((c = getopt(argc, argv, "m:M:f:o:")) != -1)
     {
         switch(c) {
             case 'm':
@@ -42,6 +42,7 @@ void process_cli(int argc, char** argv)
                 break;
             case 'o':
                 outfname = optarg;
+                break;
             case '?':
             default:
                 err = 1;
@@ -64,8 +65,8 @@ int main(int argc, char** argv)
     int rank;
     int size;
 
-    const int nitems = 4;
-    int blocklengths[4] = {1,1,1,1};
+    const int nitems = 3;
+    int blocklengths[3] = {1,1,1};
 
     int* sendcnts = NULL;
     int* displs = NULL;
@@ -99,7 +100,9 @@ int main(int argc, char** argv)
     MPI_Type_create_struct(nitems, blocklengths, offset, types, &img_header_mpi_t);
     MPI_Type_commit(&img_header_mpi_t);
 
-    if((header = malloc(sizeof(img_header_t))) == NULL)
+    header = malloc(sizeof(img_header_t));
+
+    if(header == NULL)
     {
         fprintf(stderr, "Malloc can't allocate memory\n");
         mpiabort(-1);
@@ -109,11 +112,17 @@ int main(int argc, char** argv)
     {
         if(!image_read(fname, &img))
         {
-            fprintf(stderr, "Malloc can't allocate memory\n");
+            fprintf(stderr, "Error reading image\n");
             mpiabort(-1);
         }
+
+
+        image_write(outfname, *img);
+        return 0;
+
         /* Fill in header */
         memcpy(header, &(img->header), sizeof(img_header_t));
+        *header = img->header;
     }
 
     MPI_Bcast(header, 1, img_header_mpi_t, 0, MPI_COMM_WORLD);

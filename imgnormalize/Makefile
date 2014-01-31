@@ -1,7 +1,7 @@
 TARGET=imgnormalize
 
 MPICC=mpicc
-FLAGS=-Wall -O3
+FLAGS=-Wall -O3 -g
 LIBS=-fopenmp -lm
 INCL=-I.
 
