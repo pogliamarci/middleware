@@ -125,8 +125,8 @@ int main(int argc, char** argv)
         fprintf(stderr, "Malloc can't allocate memory\n");
         mpiabort(-1);
     }
-    elems_per_proc = image_num_pixels(header) / size;
-    add_to_last = image_num_pixels(header) % size;
+    elems_per_proc = image_num_pixels(*header) / size;
+    add_to_last = image_num_pixels(*header) % size;
     for(i=0; i<size; i++)
     {
         sendcnts[i] = elems_per_proc * header->channels;
