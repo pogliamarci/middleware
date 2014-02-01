@@ -151,8 +151,8 @@ int main(int argc, char** argv)
     MPI_Scatterv(img->data, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    // Assumption for now (to be eventually relaxed...): in case of an RGB color
-    // image we normalize the V channel after converting it in the HSV color space.
+    /* Assumption for now (to be relaxed...): in case of an RGB color
+     * image we normalize the V channel after converting it in the HSV color space. */
     image_get_bounds(header, recvcount, recvbuf, &min, &max);
     MPI_Allreduce(MPI_IN_PLACE, &min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -162,6 +162,7 @@ int main(int argc, char** argv)
     MPI_Gatherv(recvbuf, recvcount, MPI_UNSIGNED_CHAR, img->data,
             sendcnts, displs, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
+    /* Clean-up && exit */
     if(rank == 0)
     {
         image_write(outfname, *img);
@@ -170,6 +171,7 @@ int main(int argc, char** argv)
     free(sendcnts);
     free(displs);
     free(header);
+
     MPI_Finalize();
     return 0;
 }

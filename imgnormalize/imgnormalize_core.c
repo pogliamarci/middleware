@@ -22,7 +22,7 @@ void image_get_bounds(const img_header_t* head, const int slice_size,
 #pragma omp for nowait
         for(i = 0; i < slice_size; i+=displ)
         {
-            //TODO... (cleaner implementation for the two cases grayscale\rgb?)
+            /* TODO... (cleaner implementation for the two cases grayscale\rgb?) */
             if(channels == 1)
             {
                 loc_min = MIN(data[i], loc_min);
