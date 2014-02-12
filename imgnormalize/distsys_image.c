@@ -6,6 +6,18 @@
 
 #define BUF_LENGTH 71
 
+const char* error_string(img_error_t err)
+{
+    const char* str[] =
+    {
+        "Ok",
+        "File not found",
+        "Error reading file: maybe the file is corrupted or the file format is not supported",
+        "Error creating file"
+    };
+    return str[err];
+}
+
 int parse_magic_number(const char* fhead, img_header_t* header)
 {
 
@@ -37,7 +49,7 @@ int parse_magic_number(const char* fhead, img_header_t* header)
     return 1;
 }
 
-int image_read(const char* path, image_t** image)
+img_error_t image_read(const char* path, image_t** image)
 {
     FILE* fp;
     char buff[BUF_LENGTH];
@@ -46,10 +58,7 @@ int image_read(const char* path, image_t** image)
     fp = fopen(path, "rb");
 
     if(fp == NULL)
-    {
-        perror("Can't open the image file");
-        return -1;
-    }
+        return ENOTFOUND;
 
     fgets(buff, sizeof(buff), fp);
 
@@ -58,10 +67,7 @@ int image_read(const char* path, image_t** image)
 
 
     if(!parse_magic_number(buff, &((*image)->header)))
-    {
-        fprintf(stderr, "Unknown file format\n");
         goto img_err;
-    }
 
     /* eat up comments */
     do {
@@ -83,19 +89,13 @@ int image_read(const char* path, image_t** image)
     /* check if maximum depth is less than a single byte */
     fgets(buff, sizeof(buff), fp);
     if(atoi(buff) > 255)
-    {
-        fprintf(stderr, "This program supports 8-bit grayscale and 24-bit RGB images\n");
         goto img_err;
-    }
 
     (*image)->data = (uint8_t*) malloc(image_num_pixels((*image)->header) * sizeof(uint8_t));
 
     /* verify memory allocation */
     if (!(*image)->data)
-    {
-        fprintf(stderr, "Can't allocate memory to store the image\n");
         goto img_err;
-    }
 
     switch(((*image)->header).format)
     {
@@ -113,20 +113,16 @@ int image_read(const char* path, image_t** image)
             }
             break;
         default:
-            fprintf(stderr, "WTF???\n");
             goto data_err;
             break;
     }
 
     /* make sure ppm image data was read */
     if ((*image)->data == NULL)
-    {
-        fprintf(stderr, "Error reading image data\n");
         goto data_err;
-    }
 
     fclose(fp);
-    return 1;
+    return OK;
 
 data_err:
     free((*image)->data);
@@ -134,7 +130,7 @@ img_err:
     fclose(fp);
     free(*image);
     *image = NULL;
-    return 0;
+    return EIMGREAD;
 }
 
 
@@ -159,7 +155,7 @@ const char* get_magic_number(const img_header_t* head)
     }
 }
 
-int image_write(const char* path, image_t image)
+img_error_t image_write(const char* path, image_t image)
 {
     FILE* fp;
     char buff[BUF_LENGTH];
@@ -168,7 +164,7 @@ int image_write(const char* path, image_t image)
     fp = fopen(path, "wb");
 
     if(fp == NULL)
-        return -1;
+        return ECREATEFILE;
 
     fputs(get_magic_number(&image.header), fp);
     fputc('\n', fp);
@@ -195,7 +191,7 @@ int image_write(const char* path, image_t image)
 
     fclose(fp);
 
-    return 1;
+    return OK;
 }
 
 void image_free(image_t* image)

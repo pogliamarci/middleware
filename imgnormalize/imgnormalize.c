@@ -101,15 +101,16 @@ int main(int argc, char** argv)
 
     if(header == NULL)
     {
-        fprintf(stderr, "Malloc can't allocate memory\n");
+        fprintf(stderr, "Error: malloc can't allocate memory\n");
         mpiabort(-1);
     }
 
     if(rank == 0)
     {
-        if(!image_read(fname, &img))
+        img_error_t err;
+        if((err = image_read(fname, &img)) != OK)
         {
-            fprintf(stderr, "Error reading image\n");
+            fprintf(stderr, "Error reading image: %s\n", error_string(err));
             mpiabort(-1);
         }
 
@@ -125,7 +126,7 @@ int main(int argc, char** argv)
     displs   = malloc(size*sizeof(int));
     if(sendcnts == NULL || displs == NULL)
     {
-        fprintf(stderr, "Malloc can't allocate memory\n");
+        fprintf(stderr, "Error: malloc can't allocate memory\n");
         mpiabort(-1);
     }
 
@@ -144,7 +145,7 @@ int main(int argc, char** argv)
     /* allocate buffers to accomodate data reception */
     recvbuf = malloc(sendcnts[rank] * sizeof(uint8_t));
     if(!recvbuf) {
-        fprintf(stderr, "Malloc can't allocate memory\n");
+        fprintf(stderr, "Error: malloc can't allocate memory\n");
         mpiabort(-1);
     }
 
@@ -165,7 +166,9 @@ int main(int argc, char** argv)
     /* Clean-up && exit */
     if(rank == 0)
     {
-        image_write(outfname, *img);
+        img_error_t err;
+        if((err = image_write(outfname, *img)) != OK)
+            fprintf(stderr, "Error: %s. Output image not generated.\n", error_string(err));
         image_free(img);
     }
     free(sendcnts);

@@ -9,6 +9,12 @@ enum img_fileformat {
     PPM
 };
 
+typedef enum {
+    OK, ENOTFOUND, EIMGREAD, ECREATEFILE
+} img_error_t;
+
+const char* error_string(img_error_t err);
+
 /* TODO the fileformat field hasn't been converted
  * in the MPI type. This doesn't matter due to how structures
  * are written in memory (i.e., it is the last field...)
@@ -27,9 +33,9 @@ typedef struct {
 } image_t;
 
 
-int image_read(const char* path, image_t** image);
+img_error_t image_read(const char* path, image_t** image);
 
-int image_write(const char* path, image_t image);
+img_error_t image_write(const char* path, image_t image);
 
 void image_free(image_t* image);
 
