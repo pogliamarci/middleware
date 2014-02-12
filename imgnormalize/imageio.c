@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "distsys_image.h"
+#include "imageio.h"
 
 #define BUF_LENGTH 71
 

@@ -5,7 +5,7 @@
 
 #include <mpi.h>
 
-#include "distsys_image.h"
+#include "imageio.h"
 #include "imgnormalize_core.h"
 
 #define OUTFNAME_DEFAULT "out.ppm"
