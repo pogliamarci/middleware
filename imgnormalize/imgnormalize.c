@@ -142,7 +142,7 @@ int main(int argc, char** argv)
         mpiabort(-1);
     }
 
-    MPI_Scatterv(img->data, sendcnts, displs, MPI_UNSIGNED_CHAR,
+    MPI_Scatterv(rank == 0 ? img->data : NULL, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
     /**
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
 
     image_normalize(header, recvcount, recvbuf, min, max, newMin, newMax);
 
-    MPI_Gatherv(recvbuf, recvcount, MPI_UNSIGNED_CHAR, img->data,
+    MPI_Gatherv(recvbuf, recvcount, MPI_UNSIGNED_CHAR, rank == 0 ? img->data : NULL,
             sendcnts, displs, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
     if(rank == 0)
