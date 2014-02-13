@@ -6,7 +6,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class TemperatureOutliersMapper extends Mapper<LongWritable, Text, TemperatureOutliersKey, TemperatureOutliersValue> {
+public class PowerOutliersMapper extends Mapper<LongWritable, Text, PowerOutliersKey, PowerOutliersValue> {
 
 	private long firstTimestamp = 0;
 	private static final long WINDOW_LENGTH = 3600;
@@ -26,19 +26,19 @@ public class TemperatureOutliersMapper extends Mapper<LongWritable, Text, Temper
 		if(tokens.length != 6) // sanity check
 			return;
 		
-		int hour = timestampToHour(Long.parseLong(tokens[1]));
+		long hour = timestampToHour(Long.parseLong(tokens[1]));
 		int house = Integer.parseInt(tokens[2]);
 		int household = Integer.parseInt(tokens[3]);
 		int plug = Integer.parseInt(tokens[4]);
-		int meas = Integer.parseInt(tokens[5]);
+		int load = Integer.parseInt(tokens[5]);
 		
-		context.write(new TemperatureOutliersKey(hour, house, household),
-				new TemperatureOutliersValue(plug, meas));
+		context.write(new PowerOutliersKey(hour, house),
+				new PowerOutliersValue(household, plug, load));
 
 	}
 	
-	private int timestampToHour(long timestamp) {
-		return (int) ((timestamp - firstTimestamp) % WINDOW_LENGTH);
+	private long timestampToHour(long timestamp) {
+		return (timestamp - firstTimestamp) % WINDOW_LENGTH;
 	}
 	
 }

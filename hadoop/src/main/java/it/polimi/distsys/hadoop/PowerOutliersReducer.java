@@ -11,16 +11,16 @@ import java.util.Map.Entry;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
-public class TemperatureOutliersReducer extends Reducer<TemperatureOutliersKey, TemperatureOutliersValue, TemperatureOutliersKey, DoubleWritable> {
+public class PowerOutliersReducer extends Reducer<PowerOutliersKey, PowerOutliersValue, PowerOutliersKey, DoubleWritable> {
 	
 	@Override
-	protected void reduce(TemperatureOutliersKey key, Iterable<TemperatureOutliersValue> values, Context context) throws IOException, InterruptedException {
+	protected void reduce(PowerOutliersKey key, Iterable<PowerOutliersValue> values, Context context) throws IOException, InterruptedException {
 		
 		
 		int median = computeMedian(values);
 		
 		Map<Integer, List<Integer>> mp = new HashMap<Integer, List<Integer>>();
-		for(TemperatureOutliersValue v : values)
+		for(PowerOutliersValue v : values)
 		{
 			if(mp.get(v.getPlug()) != null) {
 				mp.put(v.getPlug(), new ArrayList<Integer>());
@@ -39,10 +39,10 @@ public class TemperatureOutliersReducer extends Reducer<TemperatureOutliersKey, 
 		context.write(key, new DoubleWritable(((double) tn / (double) p)));
 	}
 	
-	private int computeMedian(Iterable<TemperatureOutliersValue> values) 
+	private int computeMedian(Iterable<PowerOutliersValue> values) 
 	{
 		List<Integer> loi = new ArrayList<Integer>();
-		for(TemperatureOutliersValue v : values)
+		for(PowerOutliersValue v : values)
 		{
 			loi.add(v.getMeasurement());
 		}

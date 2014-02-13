@@ -8,19 +8,22 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 
 
-public class TemperatureOutliersValue implements Writable {
+public class PowerOutliersValue implements Writable {
 	
 	private IntWritable plug;
 	private IntWritable measurement;
+	private IntWritable household;
 	
-	public TemperatureOutliersValue() {
+	public PowerOutliersValue() {
 		plug = new IntWritable();
 		measurement = new IntWritable();
+		household = new IntWritable();
 	}
 	
-	public TemperatureOutliersValue(int plug, int measurement) {
+	public PowerOutliersValue(int household, int plug, int measurement) {
 		this.plug = new IntWritable(plug);
 		this.measurement = new IntWritable(measurement);
+		this.household = new IntWritable(household);
 	}
 	
 	public int getPlug() {
@@ -31,22 +34,30 @@ public class TemperatureOutliersValue implements Writable {
 		return measurement.get();
 	}
 	
+	public int getHousehold() {
+		return household.get();
+	}
+	
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		plug.readFields(in);
 		measurement.readFields(in);
+		household.readFields(in);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
 		plug.write(out);
 		measurement.write(out);
+		household.write(out);
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result
+				+ ((household == null) ? 0 : household.hashCode());
 		result = prime * result
 				+ ((measurement == null) ? 0 : measurement.hashCode());
 		result = prime * result + ((plug == null) ? 0 : plug.hashCode());
@@ -59,9 +70,14 @@ public class TemperatureOutliersValue implements Writable {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof PowerOutliersValue))
 			return false;
-		TemperatureOutliersValue other = (TemperatureOutliersValue) obj;
+		PowerOutliersValue other = (PowerOutliersValue) obj;
+		if (household == null) {
+			if (other.household != null)
+				return false;
+		} else if (!household.equals(other.household))
+			return false;
 		if (measurement == null) {
 			if (other.measurement != null)
 				return false;
@@ -77,8 +93,15 @@ public class TemperatureOutliersValue implements Writable {
 
 	@Override
 	public String toString() {
-		return "TemperatureOutliersValue [plug=" + plug + ", measurement="
-				+ measurement + "]";
+		StringBuilder builder = new StringBuilder();
+		builder.append("PowerOutliersValue [plug=");
+		builder.append(plug);
+		builder.append(", measurement=");
+		builder.append(measurement);
+		builder.append(", household=");
+		builder.append(household);
+		builder.append("]");
+		return builder.toString();
 	}
-	
+
 }

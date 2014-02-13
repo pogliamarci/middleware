@@ -15,7 +15,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-public class TemperatureOutliersJob extends Configured implements Tool {
+public class PowerOutliersJob extends Configured implements Tool {
 	
 	@Override
 	public int run(String[] args) throws URISyntaxException {
@@ -40,11 +40,11 @@ public class TemperatureOutliersJob extends Configured implements Tool {
 			
 			getConf().set("initialTimestamp", initialTimestamp);
 			
-			job.setMapperClass(TemperatureOutliersMapper.class);
-			job.setReducerClass(TemperatureOutliersReducer.class);
+			job.setMapperClass(PowerOutliersMapper.class);
+			job.setReducerClass(PowerOutliersReducer.class);
 
-			job.setOutputKeyClass(TemperatureOutliersKey.class);
-			job.setOutputValueClass(TemperatureOutliersValue.class);
+			job.setOutputKeyClass(PowerOutliersKey.class);
+			job.setOutputValueClass(PowerOutliersValue.class);
 			
 			return job.waitForCompletion(true) ? 0 : 1;
 		} catch (IOException e) {
@@ -56,7 +56,7 @@ public class TemperatureOutliersJob extends Configured implements Tool {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		System.exit(ToolRunner.run(new TemperatureOutliersJob(), args));
+		System.exit(ToolRunner.run(new PowerOutliersJob(), args));
 	}
 	
 }
