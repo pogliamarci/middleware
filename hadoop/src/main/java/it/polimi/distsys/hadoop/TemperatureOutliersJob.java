@@ -9,7 +9,6 @@ import java.net.URISyntaxException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -43,6 +42,7 @@ public class TemperatureOutliersJob extends Configured implements Tool {
 			
 			job.setMapperClass(TemperatureOutliersMapper.class);
 			job.setReducerClass(TemperatureOutliersReducer.class);
+
 			job.setOutputKeyClass(TemperatureOutliersKey.class);
 			job.setOutputValueClass(TemperatureOutliersValue.class);
 			
