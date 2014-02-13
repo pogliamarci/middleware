@@ -65,9 +65,6 @@ int main(int argc, char** argv)
     int rank;
     int size;
 
-    const int nitems = 3;
-    int blocklengths[3] = {1,1,1};
-
     int* sendcnts = NULL;
     int* displs = NULL;
     uint8_t* recvbuf = NULL;
@@ -78,24 +75,24 @@ int main(int argc, char** argv)
     img_header_t* header;
     int i;
     int min, max;
-
-    MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_INT};
     MPI_Datatype img_header_mpi_t;
-    MPI_Aint offset[3];
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    process_cli(argc, argv);
-
-    /* create a type for struct image_header_t */
-    /* TODO move in another compilation unit, maybe near the definition of img_header_t... */
-    offset[0] = offsetof(img_header_t, width);
-    offset[1] = offsetof(img_header_t, height);
-    offset[2] = offsetof(img_header_t, channels);
+    const int nitems = 3;
+    int blocklengths[] = {1,1,1};
+    MPI_Datatype types[] = {MPI_INT, MPI_INT, MPI_INT};
+    MPI_Aint offset[] = {
+        offsetof(img_header_t, width),
+        offsetof(img_header_t, height),
+        offsetof(img_header_t, channels)
+    };
     MPI_Type_create_struct(nitems, blocklengths, offset, types, &img_header_mpi_t);
     MPI_Type_commit(&img_header_mpi_t);
+
+    process_cli(argc, argv);
 
     header = malloc(sizeof(img_header_t));
 
@@ -107,16 +104,14 @@ int main(int argc, char** argv)
 
     if(rank == 0)
     {
-        img_error_t err;
-        if((err = image_read(fname, &img)) != OK)
+        img_error_t err = image_read(fname, &img);
+        if(err != OK)
         {
             fprintf(stderr, "Error reading image: %s\n", error_string(err));
             mpiabort(-1);
         }
-
         /* Fill in header */
         memcpy(header, &(img->header), sizeof(img_header_t));
-        *header = img->header;
     }
 
     /* Broadcast the header to every process */
@@ -141,8 +136,6 @@ int main(int argc, char** argv)
     sendcnts[size-1] += add_to_last;
 
     recvcount = sendcnts[rank];
-
-    /* allocate buffers to accomodate data reception */
     recvbuf = malloc(sendcnts[rank] * sizeof(uint8_t));
     if(!recvbuf) {
         fprintf(stderr, "Error: malloc can't allocate memory\n");
@@ -152,8 +145,10 @@ int main(int argc, char** argv)
     MPI_Scatterv(img->data, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    /* Assumption for now (to be relaxed...): in case of an RGB color
-     * image we normalize the V channel after converting it in the HSV color space. */
+    /**
+     * In case of an RGB color image, the normalization happens ONLY on the
+     * channel V, so the reduction is performed on single bytes...
+     */
     image_get_bounds(header, recvcount, recvbuf, &min, &max);
     MPI_Allreduce(MPI_IN_PLACE, &min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -163,7 +158,6 @@ int main(int argc, char** argv)
     MPI_Gatherv(recvbuf, recvcount, MPI_UNSIGNED_CHAR, img->data,
             sendcnts, displs, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    /* Clean-up && exit */
     if(rank == 0)
     {
         img_error_t err;
@@ -171,11 +165,11 @@ int main(int argc, char** argv)
             fprintf(stderr, "Error: %s. Output image not generated.\n", error_string(err));
         image_free(img);
     }
+
     free(sendcnts);
     free(displs);
     free(header);
-
     MPI_Finalize();
-    return 0;
+    return EXIT_SUCCESS;
 }
 
