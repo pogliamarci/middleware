@@ -18,10 +18,16 @@ The code has to be demonstrated using at least two physical machines connected
 in a LAN (with or without additional virtual machnes to emulate a larger
 cluster).
 
-Running the code in a cluster
+### Run the code locally
+
+* Compile: `make`
+* Run: `./imgnormalize -f <path> -m <min> -M <max> -o <outputpath>`
+
+### Running the code in a cluster
 
 * Install the `ssh` daemon on all machines, and make sure all machines in the
-  cluster can reach each other via `ssh`
+  cluster can reach each other via `ssh` (or at least that the root can
+  reach all the machines in the cluster via `ssh`)
 * Create the same user on all machines (e.g., `mpiuser`) and generate a
   private-public key pair
 * Deploy in all machines of the cluster all the public keys (put them in the
@@ -29,13 +35,15 @@ Running the code in a cluster
 * Copy the executable of the project in the same folder on each machine
 * On the cluster root, create a file (e.g., `~/.mpi_hostfile`) that contains a
   newline-separated list of the hostnames of all machines in the cluster
-* Execute the program on the host machine, specifying `--hostfile
-  <hostfile_path>' as an `mpirun` parameter. For example:
-    mpirun -np <n> --hostfile <hostfile_path> ./imgnormalize -m <min> -M <max> -f <filename> -o <outputfilename>
+* Execute the program on the host machine, specifying `--hostfile  <hostfile_path>`
+  as a parameter for `mpirun`. For example:
+
+      mpirun -np <n> --hostfile <hostfile_path> ./imgnormalize -m <min> -M <max> -f <filename> -o <outputfilename>
 
 If you are experiencing problems, check that the machines in the cluster are
-not firewalled, and that each machine is able to connect via `ssh` to itself
-and to any other machine.
+not firewalled.
 
 Furthermore, it is advised that each machine run the same version of openMPI
 and that it is installed in the same folder on each machine.
+The code has been tested under GNU/Linux (Debian Wheezy and ArchLinux) and 
+Mac OSX, using OpenMPI 1.6.4 compiled from sources.
