@@ -1,7 +1,12 @@
+#!/bin/bash
+
+#syntax: ./script.sh image_file output-dir
+
 export LD_LIBRARY_PATH=/home/marcello/mpi/lib
+dir=data/$2
 
 for nth in {1,2,4,8}; do
-	filename=data/earth-huge/runs_omp_${nth}thread.txt
+	filename=$dir/runs_omp_${nth}thread.txt
 	rm $filename
 	export OMP_NUM_THREADS=$nth
 	for run in {1..20}; do
@@ -10,15 +15,7 @@ for nth in {1,2,4,8}; do
 done
 
 for nth in {1,2,4,8}; do
-	echo "" > riepilogo_omp.txt
-	echo "Threads: ${nth}" >> riepilogo_omp.txt
-	echo "" >> riepilogo_omp.txt
-	cat data/earth-huge/runs_omp_${nth}thread.txt >> riepilogo_omp.txt
-done
-cat riepilogo_omp.txt | mailx -s "script.sh: i risultati del test (OpenMP) sono pronti" marcello.pogliani@gmail.com
-
-for nth in {1,2,4,8}; do
-	filename=data/earth-huge/runs_MPI_${nth}thread.txt
+	filename=$dir/runs_MPI_${nth}thread.txt
 	rm $filename
 	export OMP_NUM_THREADS=1
 	for run in {1..20}; do
@@ -26,10 +23,4 @@ for nth in {1,2,4,8}; do
 	done
 done
 
-for nth in {1,2,4,8}; do
-	echo "" > riepilogo_MPI.txt
-	echo "Threads: ${nth}" >> riepilogo_MPI.txt
-	echo "" >> riepilogo_MPI.txt
-	cat data/earth-huge/runs_MPI_${nth}thread.txt >> riepilogo_MPI.txt
-done
-cat riepilogo_MPI.txt | mailx -s "script.sh: i risultati del test (OpenMP) sono pronti" marcello.pogliani@gmail.com
+echo "I risultati del test sono pronti" | mailx -s "[script.sh] Test" marcello.pogliani@gmail.com
