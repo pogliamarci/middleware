@@ -111,10 +111,7 @@ img_error_t image_read(const char* path, image_t** image)
             }
             break;
         case PPM:
-            for(i = 0; !feof(fp) && i < image_num_pixels((*image)->header); ++i)
-            {
-                (*image)->data[i] = fgetc(fp);
-            }
+            fread((*image)->data, sizeof(uint8_t), image_num_pixels((*image)->header), fp);
             break;
         default:
             goto data_err;
@@ -171,17 +168,16 @@ img_error_t image_write(const char* path, image_t image)
         return ECREATEFILE;
 
     int np = image_num_pixels(image.header);
-    int fd = fileno(fp);
     switch(image.header.format)
     {
         case PPM:
             snprintf(buff, BUF_LENGTH, "%s\n", get_magic_number(&image.header));
-            write(fd, buff, strlen(buff));
+            fwrite(buff, sizeof(char), strlen(buff), fp);
             snprintf(buff, BUF_LENGTH, "%d %d\n", image.header.width, image.header.height);
-            write(fd, buff, strlen(buff));
+            fwrite(buff, sizeof(char), strlen(buff), fp);
             snprintf(buff, BUF_LENGTH, "%d\n", 255);
-            write(fd, buff, strlen(buff));
-            write(fileno(fp), image.data, np);
+            fwrite(buff, sizeof(char), strlen(buff), fp);
+            fwrite(image.data, sizeof(uint8_t), np, fp);
             sync();
             break;
         case PLAIN_PPM:
