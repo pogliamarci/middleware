@@ -5,6 +5,10 @@
 
 #include <mpi.h>
 
+#ifdef BENCHMARK
+#include <sys/time.h>
+#endif
+
 #include "imageio.h"
 #include "imgnormalize_core.h"
 
@@ -60,6 +64,15 @@ void process_cli(int argc, char** argv)
     }
 }
 
+#ifdef BENCHMARK
+void print_duration(struct timeval start, struct timeval end, char* why)
+{
+	double duration = ((end.tv_sec-start.tv_sec)*1000000
+			+ end.tv_usec - start.tv_usec)/1000.0;
+	printf("%s duration = %lf\n", why, duration);
+}
+#endif
+
 int main(int argc, char** argv)
 {
     int rank;
@@ -77,6 +90,11 @@ int main(int argc, char** argv)
     int min, max;
     MPI_Datatype img_header_mpi_t;
 
+#ifdef BENCHMARK
+    struct timeval tStart, tEnd, tBoundsStart, tBoundsEnd, tNormStart, tNormEnd;
+    struct timeval tOpenStart, tOpenEnd, tSaveStart, tSaveEnd;
+#endif
+
     const int nitems = 3;
     int blocklengths[] = {1,1,1};
     MPI_Datatype types[] = {MPI_INT, MPI_INT, MPI_INT};
@@ -85,6 +103,10 @@ int main(int argc, char** argv)
         offsetof(img_header_t, height),
         offsetof(img_header_t, channels)
     };
+
+#ifdef BENCHMARK
+    gettimeofday(&tStart, NULL);
+#endif
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -102,6 +124,9 @@ int main(int argc, char** argv)
         mpiabort(-1);
     }
 
+#ifdef BENCHMARK
+    gettimeofday(&tOpenStart, NULL);
+#endif
     if(rank == 0)
     {
         img_error_t err = image_read(fname, &img);
@@ -113,6 +138,9 @@ int main(int argc, char** argv)
         /* Fill in header */
         memcpy(header, &(img->header), sizeof(img_header_t));
     }
+#ifdef BENCHMARK
+    gettimeofday(&tOpenEnd, NULL);
+#endif
 
     /* Broadcast the header to every process */
     MPI_Bcast(header, 1, img_header_mpi_t, 0, MPI_COMM_WORLD);
@@ -145,19 +173,39 @@ int main(int argc, char** argv)
     MPI_Scatterv(rank == 0 ? img->data : NULL, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
+#ifdef BENCHMARK
+    gettimeofday(&tBoundsStart, NULL);
+#endif
+
     /**
      * In case of an RGB color image, the normalization happens ONLY on the
      * channel V, so the reduction is performed on single bytes...
      */
     image_get_bounds(header, recvcount, recvbuf, &min, &max);
+
+#ifdef BENCHMARK
+    gettimeofday(&tBoundsEnd, NULL);
+#endif
+
     MPI_Allreduce(MPI_IN_PLACE, &min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
+#ifdef BENCHMARK
+    gettimeofday(&tNormStart, NULL);
+#endif
+
     image_normalize(header, recvcount, recvbuf, min, max, newMin, newMax);
+
+#ifdef BENCHMARK
+    gettimeofday(&tNormEnd, NULL);
+#endif
 
     MPI_Gatherv(recvbuf, recvcount, MPI_UNSIGNED_CHAR, rank == 0 ? img->data : NULL,
             sendcnts, displs, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
+#ifdef BENCHMARK
+    gettimeofday(&tSaveStart, NULL);
+#endif
     if(rank == 0)
     {
         img_error_t err;
@@ -165,11 +213,24 @@ int main(int argc, char** argv)
             fprintf(stderr, "Error: %s. Output image not generated.\n", error_string(err));
         image_free(img);
     }
+#ifdef BENCHMARK
+    gettimeofday(&tSaveEnd, NULL);
+#endif
 
     free(sendcnts);
     free(displs);
     free(header);
     MPI_Finalize();
+
+#ifdef BENCHMARK
+    gettimeofday(&tEnd, NULL);
+    print_duration(tStart, tEnd, "total");
+    print_duration(tBoundsStart, tBoundsEnd, "bounds");
+    print_duration(tNormStart, tNormEnd, "normalization");
+    print_duration(tOpenStart, tOpenEnd, "open");
+    print_duration(tSaveStart, tSaveEnd, "save");
+#endif
+
     return EXIT_SUCCESS;
 }
 

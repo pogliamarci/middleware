@@ -172,16 +172,17 @@ img_error_t image_write(const char* path, image_t image)
     fprintf(fp, "%d %d\n", image.header.width, image.header.height);
     fprintf(fp, "%d\n", 255);
 
+    int np = image_num_pixels(image.header);
     switch(image.header.format)
     {
         case PPM:
-            for(i = 0; i < image_num_pixels(image.header); i++)
+            for(i = 0; i < np; i++)
             {
                 fputc(image.data[i], fp);
             }
             break;
         case PLAIN_PPM:
-            for(i = 0; i < image_num_pixels(image.header); i++)
+            for(i = 0; i < np; i++)
             {
                 snprintf(buff, BUF_LENGTH, "%d\n", image.data[i]);
                 fputs(buff, fp);
