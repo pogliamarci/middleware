@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <string.h>
+
+#include <unistd.h>
+
 #include "imageio.h"
 
 #define BUF_LENGTH 71
@@ -166,22 +170,25 @@ img_error_t image_write(const char* path, image_t image)
     if(fp == NULL)
         return ECREATEFILE;
 
-    fputs(get_magic_number(&image.header), fp);
-    fputc('\n', fp);
-
-    fprintf(fp, "%d %d\n", image.header.width, image.header.height);
-    fprintf(fp, "%d\n", 255);
-
     int np = image_num_pixels(image.header);
+    int fd = fileno(fp);
     switch(image.header.format)
     {
         case PPM:
-            for(i = 0; i < np; i++)
-            {
-                fputc(image.data[i], fp);
-            }
+            snprintf(buff, BUF_LENGTH, "%s\n", get_magic_number(&image.header));
+            write(fd, buff, strlen(buff));
+            snprintf(buff, BUF_LENGTH, "%d %d\n", image.header.width, image.header.height);
+            write(fd, buff, strlen(buff));
+            snprintf(buff, BUF_LENGTH, "%d\n", 255);
+            write(fd, buff, strlen(buff));
+            write(fileno(fp), image.data, np);
+            sync();
             break;
         case PLAIN_PPM:
+            fputs(get_magic_number(&image.header), fp);
+            fputc('\n', fp);
+            fprintf(fp, "%d %d\n", image.header.width, image.header.height);
+            fprintf(fp, "%d\n", 255);
             for(i = 0; i < np; i++)
             {
                 snprintf(buff, BUF_LENGTH, "%d\n", image.data[i]);
