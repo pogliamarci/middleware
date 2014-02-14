@@ -27,6 +27,7 @@ public class PowerOutliersJob extends Configured implements Tool {
 		}
 		
 		try {
+			
 			Job job = Job.getInstance(getConf(), "Hourly temperature");
 			job.setJarByClass(getClass());
 			FileInputFormat.addInputPath(job, new Path(args[0]));
@@ -38,7 +39,7 @@ public class PowerOutliersJob extends Configured implements Tool {
 			String initialTimestamp = br.readLine().split(",")[1].trim();
 			fs.close();
 			
-			getConf().set("initialTimestamp", initialTimestamp);
+			job.getConfiguration().set("initialTimestamp", initialTimestamp);
 			
 			job.setMapperClass(PowerOutliersMapper.class);
 			job.setReducerClass(PowerOutliersReducer.class);

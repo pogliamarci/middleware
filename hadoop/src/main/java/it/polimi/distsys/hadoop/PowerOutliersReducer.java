@@ -16,37 +16,29 @@ public class PowerOutliersReducer extends Reducer<PowerOutliersKey, PowerOutlier
 	@Override
 	protected void reduce(PowerOutliersKey key, Iterable<PowerOutliersValue> values, Context context) throws IOException, InterruptedException {
 		
-		
-		int median = computeMedian(values);
-		
 		Map<Integer, List<Integer>> mp = new HashMap<Integer, List<Integer>>();
+		List<Integer> loi = new ArrayList<Integer>();
 		for(PowerOutliersValue v : values)
 		{
-			if(mp.get(v.getPlug()) != null) {
+			loi.add(v.getMeasurement());
+			if(mp.get(v.getPlug()) == null) {
 				mp.put(v.getPlug(), new ArrayList<Integer>());
 			}
 			mp.get(v.getPlug()).add(v.getMeasurement());
 		}
-		
+
+		int median = computeMedian(loi);
+
 		int tn = 0, p = 0;
 		for(Entry<Integer, List<Integer>> e : mp.entrySet())
 		{
 			tn++;
 			int m = computeMedian(e.getValue());
-			if(m > median)
+			if(m > median) {
 				p += 1;
+			}
 		}
 		context.write(key, new DoubleWritable(((double) tn / (double) p)));
-	}
-	
-	private int computeMedian(Iterable<PowerOutliersValue> values) 
-	{
-		List<Integer> loi = new ArrayList<Integer>();
-		for(PowerOutliersValue v : values)
-		{
-			loi.add(v.getMeasurement());
-		}
-		return computeMedian(loi);
 	}
 	
 	private int computeMedian(List<Integer> loi) {
