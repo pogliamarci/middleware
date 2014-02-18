@@ -1,2 +1,0 @@
-java -cp jms-cluster-1.0.jar:/tmp/ship/bundle/* chat.ChatClient
-java -cp jms-cluster-1.0.jar:/tmp/ship/bundle/* chat.Admin
