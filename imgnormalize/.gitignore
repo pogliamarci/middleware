@@ -25,3 +25,15 @@ build/
 
 # Executable file
 imgnormalize
+
+images/
+
+# Parsed image files
+*.parsed
+
+# we commit only vector images here...
+*.png
+
+# R stuff
+Rplots.pdf
+
