@@ -75,23 +75,11 @@ public class Server implements MessageListener {
 		
 	}
 	
-	public void stop() throws ConnectionException {
-		try {
-			conn.close();
-		} catch (JMSException e) {
-			throw new ConnectionException("can't close connection");
-		}
-	}
-	
 	public static void main(String[] args) {
-		Server svr = new Server();
+		final Server svr = new Server();
 		try {
 			svr.go();
-			System.in.read(); //TODO orribile
-			System.out.println("waiting");
-			svr.stop();
-			System.out.println("stopped");
-		} catch (ConnectionException | IOException e) {
+		} catch (ConnectionException e) {
 			e.printStackTrace();
 		}
 	}

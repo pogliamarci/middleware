@@ -5,7 +5,6 @@ import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,7 +15,6 @@ import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
-import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.naming.InitialContext;
@@ -25,12 +23,12 @@ import javax.naming.NamingException;
 public class GridClient {
 
 	private boolean connected;
+	private QueueConnection conn;
 	private QueueSession session;
 	private Queue jobsQueue;
 	private Queue tempQueue;
-	private QueueConnection conn;
 	private MessageProducer jobQueuePublisher;
-	private ReplyListener listener;
+	private ReplyProcesser listener;
 	private ExecutorService pool = Executors.newCachedThreadPool();
 	
 	public GridClient() {
@@ -40,66 +38,54 @@ public class GridClient {
 	public void connect() throws ConnectionException {
 		if(connected)
 			return;
-
-		listener = new ReplyListener();
+		
+		QueueConnectionFactory qcf;
 
 		try {
 			InitialContext ictx = new InitialContext();
-			QueueConnectionFactory qcf = (QueueConnectionFactory) ictx.lookup("qcf");
+			qcf = (QueueConnectionFactory) ictx.lookup("qcf");
 			jobsQueue = (Queue) ictx.lookup("jobsQueue");
 			ictx.close();
-
-			
-			conn = qcf.createQueueConnection();
-			try {
-				conn.start();
-			} catch (JMSException e) {
-				throw new ConnectionException("can't start connection");
-			}
-			
-			
-			session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-
-			QueueSession session2 = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-			tempQueue = session2.createTemporaryQueue();
-			QueueReceiver recv = session2.createReceiver(tempQueue);
-			recv.setMessageListener(listener);
-			
-			jobQueuePublisher = session.createSender(jobsQueue);
-
 		} catch (NamingException e) {
-			throw new ConnectionException("can't look up items (naming error)");
-		} catch (JMSException e) {
+				throw new ConnectionException("can't look up items (naming error)");
+		}
+
+		try {
+			conn = qcf.createQueueConnection();
+			session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+			tempQueue = session.createTemporaryQueue();
+			listener = new ReplyProcesser();
+			listener.listen(conn, tempQueue);
+			jobQueuePublisher = session.createSender(jobsQueue);
+			conn.start();
+		}  catch (JMSException e) {
 			throw new ConnectionException("can't create connection");
 		}
-		
-		
 		connected = true;
 	}
 	
 	public Serializable submitJob(Job j) throws JobSubmissionFailedException {
 		if(!connected)
-			throw new JobSubmissionFailedException("Client is not connected");
-		
-		try {
-			return submitJobAsync(j).get();
-		} catch (InterruptedException | ExecutionException e) {
-			throw new JobSubmissionFailedException(e);
-		}
+			throw new JobSubmissionFailedException("Client is not connected");	
+		return listener.get(postJob(j));
 	}
 	
 	public Future<Serializable> submitJobAsync(Job j) throws JobSubmissionFailedException {
 		if(!connected)
 			throw new JobSubmissionFailedException("Client is not connected");
 		
-		try {
-			ObjectMessage msg = session.createObjectMessage();
-			msg.setObject(j);
-			msg.setJMSReplyTo(tempQueue);
-			jobQueuePublisher.send(msg);
-			final String corrId = msg.getJMSMessageID();
-			
-			return pool.submit(new Callable<Serializable>() {
+		//TODO for simplicity, here we call postJob from within this thread.
+		//A better approach would be waking up a poster thread that does 
+		//the operation asynchronously.
+		//Can't just place postJob() inside the callable because JMS wants that every
+		//operation belonging to the same session is performed by the same thread.
+		//Also, the use of Callable is not very scalable, because it spawns a thread
+		//just to check whether a result is finished. Maybe it is better to do something
+		//finer, such as building an object similar to the Futures but that allows a single
+		//thread to wait for everyone (and then waking up only the "right" future). Maybe this
+		//is already implemented in the JMS APIs, maybe not. Need to check!
+		final String corrId = postJob(j);
+		return pool.submit(new Callable<Serializable>() {
 				@Override
 				public Serializable call() {
 					synchronized(listener) {
@@ -107,9 +93,7 @@ public class GridClient {
 					}
 				}
 			});
-		} catch (JMSException e) {
-			throw new JobSubmissionFailedException(e);
-		}
+		
 	}
 	
 	public void disconnect() throws ConnectionException {
@@ -119,5 +103,17 @@ public class GridClient {
 		} catch (JMSException e) {
 			throw new ConnectionException("can't stop connection");
 		}
+	}
+	
+	private String postJob(Job j) throws JobSubmissionFailedException {
+		try {
+			ObjectMessage msg = session.createObjectMessage();
+			msg.setObject(j);
+			msg.setJMSReplyTo(tempQueue);
+			jobQueuePublisher.send(msg);
+			return msg.getJMSMessageID();
+		} catch (JMSException e) {
+			throw new JobSubmissionFailedException(e);
+		}	
 	}
 }
