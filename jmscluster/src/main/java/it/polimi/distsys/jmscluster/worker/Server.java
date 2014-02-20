@@ -1,58 +1,34 @@
 package it.polimi.distsys.jmscluster.worker;
 
 import it.polimi.distsys.jmscluster.client.ConnectionException;
-import it.polimi.distsys.jmscluster.jobs.Job;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.jms.JMSException;
-import javax.jms.Message;
-
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
-import javax.jms.MessageProducer;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-public class Server implements MessageListener {
-	
-	private ExecutorService pool = Executors.newCachedThreadPool();
-	private QueueSession session;
-	private QueueConnection conn;
+public class Server {
 
-	@Override
-	public void onMessage(Message msg) {
-		if (msg instanceof ObjectMessage) {
-			final ObjectMessage om = (ObjectMessage) msg;
-			pool.execute(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						Job job = (Job) om.getObject();
-						Serializable ret = job.run();
-						QueueSession locSession = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-						ObjectMessage reply = locSession.createObjectMessage();
-						reply.setJMSCorrelationID(om.getJMSMessageID());
-						reply.setObject(ret);
-						Queue tempQueue = (Queue) om.getJMSReplyTo();
-						MessageProducer prod = locSession.createProducer(tempQueue);
-						prod.send(reply);
-					} catch (JMSException e) {
-						e.printStackTrace();
-					}
-				}
-			});
-		}
+	private int serverId;
+	private QueueSession queueSession;
+	private QueueConnection queueConn;
+	private TopicSession topicSession;
+	private TopicConnection topicConn;
+	
+	public Server(int id) {
+		serverId = id;
 	}
+		
 	
 	public void go() throws ConnectionException {
 		try {
@@ -60,23 +36,43 @@ public class Server implements MessageListener {
 			QueueConnectionFactory qcf = (QueueConnectionFactory) ictx.lookup("qcf");
 			Queue jobsQueue = (Queue) ictx.lookup("jobsQueue");
 			ictx.close();
-			conn = qcf.createQueueConnection();
-			session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+			queueConn = qcf.createQueueConnection();
+			queueSession = queueConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			
-			conn.start();
+			queueConn.start();
 			
-			QueueReceiver recv = session.createReceiver(jobsQueue);
-			recv.setMessageListener(this);
+			QueueReceiver recv = queueSession.createReceiver(jobsQueue);
+			recv.setMessageListener(new JobsListener(queueConn));
+			
 		} catch (NamingException e) {
 			throw new ConnectionException("can't look up items (naming error)");
 		} catch (JMSException e) {
 			throw new ConnectionException("can't create connection");
 		}
-		
+	}
+	
+	public void subscribe() throws ConnectionException {
+		try {
+			InitialContext ictx = new InitialContext();
+			TopicConnectionFactory tcf = (TopicConnectionFactory) ictx.lookup("tcf");
+			Topic coordinationTopic = (Topic) ictx.lookup("coordinationTopic");
+			ictx.close();
+			topicConn = tcf.createTopicConnection();
+			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+			
+			//TopicSubscriber tsub =  topicSession.setMessageListener(new CoordinationListener());
+			
+		} catch (NamingException e) {
+			throw new ConnectionException("can't look up items (naming error)");
+		} catch (JMSException e) {
+			throw new ConnectionException("can't create connection");
+		}
 	}
 	
 	public static void main(String[] args) {
-		final Server svr = new Server();
+		//TODO usage
+		
+		final Server svr = new Server(Integer.parseInt(args[1]));
 		try {
 			svr.go();
 		} catch (ConnectionException e) {

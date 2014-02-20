@@ -1,7 +1,7 @@
 1. Decompress joram somewhere (e.g., in /tmp)
 2. export JORAM_PATH=/tmp (or equal to the directory where joram has been decompressed)
 3. cd $JORAM_PATH/samples/bin
-4. chmod +x simple_server.sh && ./simple_server.sh
+4. chmod +x single_server.sh && ./single_server.sh
 5. java -cp jmscluster-1.0.jar:/tmp/ship/bundle/* it.polimi.distsys.jmscluster.utils.LocalAdmin
 6. java -cp jmscluster-1.0.jar:/tmp/ship/bundle/* it.polimi.distsys.jmscluster.worker.Server
 7. java -cp jmscluster-1.0.jar:/tmp/ship/bundle/* it.polimi.distsys.jmscluster.client.Client
