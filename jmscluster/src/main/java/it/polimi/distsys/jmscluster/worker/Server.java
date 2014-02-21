@@ -6,8 +6,6 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.jms.TopicConnection;
@@ -20,13 +18,15 @@ import javax.naming.NamingException;
 public class Server {
 
 	private int serverId;
-	private QueueSession queueSession;
 	private QueueConnection queueConn;
 	private TopicSession topicSession;
 	private TopicConnection topicConn;
 	
+	private JobsTracker tracker;
+	
 	public Server(int id) {
 		serverId = id;
+		tracker = new JobsTracker();
 	}
 		
 	
@@ -35,34 +35,27 @@ public class Server {
 			InitialContext ictx = new InitialContext();
 			QueueConnectionFactory qcf = (QueueConnectionFactory) ictx.lookup("qcf");
 			Queue jobsQueue = (Queue) ictx.lookup("jobsQueue");
-			ictx.close();
-			queueConn = qcf.createQueueConnection();
-			queueSession = queueConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-			
-			queueConn.start();
-			
-			
-			QueueReceiver recv = queueSession.createReceiver(jobsQueue);
-			// use recv.receive() ......
-			recv.setMessageListener(new JobsListener(queueConn));
-			
-		} catch (NamingException e) {
-			throw new ConnectionException("can't look up items (naming error)");
-		} catch (JMSException e) {
-			throw new ConnectionException("can't create connection");
-		}
-	}
-	
-	public void subscribe() throws ConnectionException {
-		try {
-			InitialContext ictx = new InitialContext();
 			TopicConnectionFactory tcf = (TopicConnectionFactory) ictx.lookup("tcf");
 			Topic coordinationTopic = (Topic) ictx.lookup("coordinationTopic");
 			ictx.close();
+
+			queueConn = qcf.createQueueConnection();
+			
 			topicConn = tcf.createTopicConnection();
 			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+			
+			CoordinationManager manager = 
+					new CoordinationManager(tracker, topicSession, coordinationTopic, serverId);
+			
 			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
-			subs.setMessageListener(new CoordinationListener());
+			subs.setMessageListener(manager);
+			
+			RequestAcceptorThread acceptor = new RequestAcceptorThread(queueConn, jobsQueue, manager);
+			
+			acceptor.run();
+			
+			topicConn.start();
+			queueConn.start();
 		} catch (NamingException e) {
 			throw new ConnectionException("can't look up items (naming error)");
 		} catch (JMSException e) {
@@ -75,9 +68,6 @@ public class Server {
 		
 		final Server svr = new Server(Integer.parseInt(args[1]));
 		try {
-			// io farei in questo modo: un thread che ascolta i job quando deve farlo e un thread che gestisce le subscription...
-			// il thread che gestisce le subscription informa l'altro thread dei messaggi; l'altro thread gestisce il tutto.
-			// :-)
 			svr.go();
 		} catch (ConnectionException e) {
 			e.printStackTrace();
