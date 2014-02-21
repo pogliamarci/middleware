@@ -47,12 +47,13 @@ public class JobsTracker {
 	}
 	
 	public boolean canAccept() {
-		int min = 0;
+		int myJobs = ongoingJobs.get();
+		
 		for(AtomicInteger ai : information.values()) {
 			int cur = ai.get();
-			if (cur < min) min = cur;
+			if (myJobs > cur) return false;
 		}
-		return ongoingJobs.get() <= min;
+		return true;
 	}
 	
 	public int getJobs() {
