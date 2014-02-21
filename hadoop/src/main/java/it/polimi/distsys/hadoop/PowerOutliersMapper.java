@@ -16,6 +16,7 @@ public class PowerOutliersMapper extends Mapper<LongWritable, Text, PowerOutlier
 			InterruptedException {
 		super.setup(context);
 		firstTimestamp = Long.parseLong(context.getConfiguration().get("initialTimestamp"));
+		System.out.println("\n\n\n\n"+firstTimestamp+"\n\n\n\n");
 	}
 
 	@Override
@@ -38,7 +39,7 @@ public class PowerOutliersMapper extends Mapper<LongWritable, Text, PowerOutlier
 	}
 	
 	private long timestampToHour(long timestamp) {
-		return (timestamp - firstTimestamp) % WINDOW_LENGTH;
+		return (timestamp - firstTimestamp) / WINDOW_LENGTH;
 	}
 	
 }
