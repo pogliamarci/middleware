@@ -40,7 +40,7 @@ public class LocalAdmin {
 			throws AdminException, ConnectException, NamingException {
 		TopicConnectionFactory tcf = TcpConnectionFactory.create(host, port);
 		
-//		AdminModule.connect(cf, "root", "root");
+		AdminModule.connect(tcf, "root", "root");
 		
 		User.create("anonymous", "anonymous");
 

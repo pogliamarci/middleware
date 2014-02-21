@@ -69,7 +69,7 @@ public class Server {
 			return;
 		}
 		
-		final Server svr = new Server(Integer.parseInt(args[1]));
+		final Server svr = new Server(Integer.parseInt(args[0]));
 		try {
 			svr.go();
 		} catch (ConnectionException e) {
