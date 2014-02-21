@@ -2,15 +2,19 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
-
 #include <mpi.h>
-
-#ifdef BENCHMARK
-#include <sys/time.h>
-#endif
 
 #include "imageio.h"
 #include "imgnormalize_core.h"
+
+#ifdef BENCHMARK
+#include "benchmark_utils.h"
+#define BENCH_GETTIME(x) do {		\
+      gettimeofday((x), NULL);		\
+      } while(0)
+#else
+#define BENCH_GETTIME(x)
+#endif
 
 #define OUTFNAME_DEFAULT "out.ppm"
 
@@ -64,14 +68,27 @@ void process_cli(int argc, char** argv)
     }
 }
 
-#ifdef BENCHMARK
-void print_duration(struct timeval start, struct timeval end, char* why)
+/* Build the array with the size and the displacement of each process's task */
+int compute_division(long pixels, int size, int* sendcnts[], int* displs[])
 {
-	double duration = ((end.tv_sec-start.tv_sec)*1000000
-			+ end.tv_usec - start.tv_usec)/1000.0;
-	printf("%s duration = %lf\n", why, duration);
+    int i;
+    int elems_per_proc = pixels / size;
+    int add_to_last = pixels % size;
+
+    *sendcnts = malloc(size*sizeof(int));
+    *displs   = malloc(size*sizeof(int));
+
+    if(sendcnts == NULL || displs == NULL)
+        return 0;
+
+    for(i=0; i<size; i++)
+    {
+        (*sendcnts)[i] = elems_per_proc;
+        (*displs)[i]   = elems_per_proc * i;
+    }
+    (*sendcnts)[size-1] += add_to_last;
+    return 1;
 }
-#endif
 
 int main(int argc, char** argv)
 {
@@ -82,11 +99,8 @@ int main(int argc, char** argv)
     int* displs = NULL;
     uint8_t* recvbuf = NULL;
     int recvcount;
-    int elems_per_proc;
-    int add_to_last;
     image_t* img;
     img_header_t* header;
-    int i;
     int min, max;
     MPI_Datatype img_header_mpi_t;
 
@@ -104,9 +118,7 @@ int main(int argc, char** argv)
         offsetof(img_header_t, channels)
     };
 
-#ifdef BENCHMARK
-    gettimeofday(&tStart, NULL);
-#endif
+BENCH_GETTIME(&tStart);
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -124,9 +136,8 @@ int main(int argc, char** argv)
         mpiabort(-1);
     }
 
-#ifdef BENCHMARK
-    gettimeofday(&tOpenStart, NULL);
-#endif
+BENCH_GETTIME(&tOpenStart);
+
     if(rank == 0)
     {
         img_error_t err = image_read(fname, &img);
@@ -138,30 +149,17 @@ int main(int argc, char** argv)
         /* Fill in header */
         memcpy(header, &(img->header), sizeof(img_header_t));
     }
-#ifdef BENCHMARK
-    gettimeofday(&tOpenEnd, NULL);
-#endif
+
+BENCH_GETTIME(&tOpenEnd);
 
     /* Broadcast the header to every process */
     MPI_Bcast(header, 1, img_header_mpi_t, 0, MPI_COMM_WORLD);
 
-    sendcnts = malloc(size*sizeof(int));
-    displs   = malloc(size*sizeof(int));
-    if(sendcnts == NULL || displs == NULL)
-    {
+
+    if(!compute_division(image_num_pixels(*header), size, &sendcnts, &displs)) {
         fprintf(stderr, "Error: malloc can't allocate memory\n");
         mpiabort(-1);
     }
-
-    /* Build the array with the size and the displacement of each process's task */
-    elems_per_proc = image_num_pixels(*header) / size;
-    add_to_last = image_num_pixels(*header) % size;
-    for(i=0; i<size; i++)
-    {
-        sendcnts[i] = elems_per_proc;
-        displs[i]   = elems_per_proc * i;
-    }
-    sendcnts[size-1] += add_to_last;
 
     recvcount = sendcnts[rank];
     recvbuf = malloc(sendcnts[rank] * sizeof(uint8_t));
@@ -173,39 +171,26 @@ int main(int argc, char** argv)
     MPI_Scatterv(rank == 0 ? img->data : NULL, sendcnts, displs, MPI_UNSIGNED_CHAR,
             recvbuf, recvcount, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-#ifdef BENCHMARK
-    gettimeofday(&tBoundsStart, NULL);
-#endif
+BENCH_GETTIME(&tBoundsStart);
 
-    /**
-     * In case of an RGB color image, the normalization happens ONLY on the
-     * channel V, so the reduction is performed on single bytes...
-     */
     image_get_bounds(header, recvcount, recvbuf, &min, &max);
 
-#ifdef BENCHMARK
-    gettimeofday(&tBoundsEnd, NULL);
-#endif
+BENCH_GETTIME(&tBoundsEnd);
 
     MPI_Allreduce(MPI_IN_PLACE, &min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-#ifdef BENCHMARK
-    gettimeofday(&tNormStart, NULL);
-#endif
+BENCH_GETTIME(&tNormStart);
 
     image_normalize(header, recvcount, recvbuf, min, max, newMin, newMax);
 
-#ifdef BENCHMARK
-    gettimeofday(&tNormEnd, NULL);
-#endif
+BENCH_GETTIME(&tNormEnd);
 
     MPI_Gatherv(recvbuf, recvcount, MPI_UNSIGNED_CHAR, rank == 0 ? img->data : NULL,
             sendcnts, displs, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-#ifdef BENCHMARK
-    gettimeofday(&tSaveStart, NULL);
-#endif
+BENCH_GETTIME(&tSaveStart);
+
     if(rank == 0)
     {
         img_error_t err;
@@ -213,17 +198,17 @@ int main(int argc, char** argv)
             fprintf(stderr, "Error: %s. Output image not generated.\n", error_string(err));
         image_free(img);
     }
-#ifdef BENCHMARK
-    gettimeofday(&tSaveEnd, NULL);
-#endif
+
+BENCH_GETTIME(&tSaveEnd);
 
     free(sendcnts);
     free(displs);
     free(header);
     MPI_Finalize();
 
+BENCH_GETTIME(&tEnd);
+
 #ifdef BENCHMARK
-    gettimeofday(&tEnd, NULL);
     print_duration(tStart, tEnd, "total");
     print_duration(tBoundsStart, tBoundsEnd, "bounds");
     print_duration(tNormStart, tNormEnd, "normalization");
