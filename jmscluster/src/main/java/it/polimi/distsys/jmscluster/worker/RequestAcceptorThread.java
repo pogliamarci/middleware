@@ -37,6 +37,7 @@ public class RequestAcceptorThread extends Thread {
 		try {
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
+			jobsConn.start();
 			
 			while(true)
 			{
@@ -48,10 +49,13 @@ public class RequestAcceptorThread extends Thread {
 						break;
 					}
 				}
-				Message newJob = jobsRecv.receive(RECV_TIMEOUT);
+				System.err.println("sto ricevendo");
+				Message newJob = jobsRecv.receive();
+				System.err.println("non sto ricevendo");
 				
 				if(newJob != null)
 					processJobMessage(newJob);
+				else System.err.println("msg -> null");
 
 			}
 		} catch(JMSException e) {

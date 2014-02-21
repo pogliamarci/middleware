@@ -51,11 +51,11 @@ public class Server {
 			subs.setMessageListener(manager);
 			
 			RequestAcceptorThread acceptor = new RequestAcceptorThread(queueConn, jobsQueue, manager);
-			
+
 			acceptor.run();
 			
-			topicConn.start();
-			queueConn.start();
+			topicConn.start();		
+
 		} catch (NamingException e) {
 			throw new ConnectionException("can't look up items (naming error)");
 		} catch (JMSException e) {
