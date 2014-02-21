@@ -59,9 +59,8 @@ public class Server {
 			ictx.close();
 			topicConn = tcf.createTopicConnection();
 			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-			
-			//TopicSubscriber tsub =  topicSession.setMessageListener(new CoordinationListener());
-			
+			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
+			subs.setMessageListener(new CoordinationListener());
 		} catch (NamingException e) {
 			throw new ConnectionException("can't look up items (naming error)");
 		} catch (JMSException e) {

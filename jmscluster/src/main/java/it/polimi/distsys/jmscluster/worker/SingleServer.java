@@ -3,7 +3,6 @@ package it.polimi.distsys.jmscluster.worker;
 import it.polimi.distsys.jmscluster.client.ConnectionException;
 import it.polimi.distsys.jmscluster.jobs.Job;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

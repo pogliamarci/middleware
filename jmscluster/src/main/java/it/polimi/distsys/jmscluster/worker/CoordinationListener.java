@@ -7,8 +7,7 @@ public class CoordinationListener implements MessageListener {
 
 	@Override
 	public void onMessage(Message arg0) {
-		// TODO Auto-generated method stub
-		
+		System.out.println("Received coordination message");
 	}
 
 }
