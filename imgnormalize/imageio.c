@@ -1,15 +1,12 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <string.h>
 
-#include <unistd.h>
-
 #include "imageio.h"
+#include "imageio_ppm.h"
 
 #define BUF_LENGTH 100
-#define LINE_LENGTH 19
 
 const char* error_string(img_error_t err)
 {
@@ -25,40 +22,17 @@ const char* error_string(img_error_t err)
 
 int parse_magic_number(const char* fhead, img_header_t* header)
 {
-
-    if(fhead[0] == 'P')
-    {
-        switch(fhead[1]) {
-            case '2':
-                header->channels = 1;
-                header->format = PLAIN_PPM;
-                break;
-            case '3':
-                header->channels = 3;
-                header->format = PLAIN_PPM;
-                break;
-            case '5':
-                header->channels = 1;
-                header->format = PPM;
-                break;
-            case '6':
-                header->channels = 3;
-                header->format = PPM;
-                break;
-            default:
-                return 0;
-        }
-    } else {
-        return 0;
-    }
-    return 1;
+    char* mn = malloc(3*sizeof(char));
+    strncpy(mn, fhead, 2);
+    if(ppm_format_init(mn, header))
+      return 1;
+    return 0;
 }
 
 img_error_t image_read(const char* path, image_t** image)
 {
     FILE* fp;
     char buff[BUF_LENGTH];
-    int i;
 
     fp = fopen(path, "rb");
 
@@ -73,70 +47,15 @@ img_error_t image_read(const char* path, image_t** image)
     if(!parse_magic_number(buff, &((*image)->header)))
         goto img_err;
 
-    /* eat up comments */
-    do {
-        fgets(buff, sizeof(buff), fp);
-    } while(buff[0] == '#');
 
-    /* parse the remainder of the header (width and height in pixels) */
-    for(i = 0; buff[i] != '\0'; i++)
-    {
-        if(buff[i] == ' ')
-        {
-            buff[i] = '\0';
-            break;
-        }
-    }
-    ((*image)->header).width = atoi(buff);
-    ((*image)->header).height = atoi(buff+i+1);
-
-    /* check if maximum depth is less than a single byte */
-    fgets(buff, sizeof(buff), fp);
-    if(atoi(buff) > 255)
-        goto img_err;
-
-    (*image)->data = (uint8_t*) malloc(image_num_pixels((*image)->header) * sizeof(uint8_t));
-
-    /* verify memory allocation */
-    if (!(*image)->data)
-        goto img_err;
-
-    switch(((*image)->header).format)
-    {
-        case PLAIN_PPM:
-            i = 0;
-            const char delims[] = " \n\r\t";
-            char* line = NULL;
-            size_t n = 0;
-            while(getline(&line, &n, fp) != -1)
-            {
-                char* str = strtok(line, delims);
-                while(str != NULL)
-                {
-                    if(i >= image_num_pixels((*image)->header))
-                    {
-                        goto data_err;
-                    }
-                    (*image)->data[i++] = atoi(str);
-                    str = strtok(NULL, delims);
-                }
-            }
-            free(line);
-            break;
-        case PPM:
-            fread((*image)->data, sizeof(uint8_t), image_num_pixels((*image)->header), fp);
-            break;
-        default:
-            goto data_err;
-            break;
-    }
+    img_error_t ret = (*image)->header.operations.read(*image, fp);
 
     /* make sure ppm image data was read */
-    if ((*image)->data == NULL)
+    if ((*image)->data == NULL || ret != OK)
         goto data_err;
 
     fclose(fp);
-    return OK;
+    return ret;
 
 data_err:
     free((*image)->data);
@@ -147,93 +66,23 @@ img_err:
     return EIMGREAD;
 }
 
-
-const char* get_magic_number(const img_header_t* head)
+const char* get_magic_number(const image_t* img)
 {
-    switch(head->format)
-    {
-        case PPM:
-            if(head->channels == 1)
-                return "P5";
-            else
-                return "P6";
-            break;
-        case PLAIN_PPM:
-            if(head->channels == 1)
-                return "P2";
-            else
-                return "P3";
-        default:
-            return "";
-            break;
-    }
-}
-
-// buffer needs to be sized at least nchar*sizeof(char)*4+2
-char* line2string(uint8_t* chararray, int nchar, char* buffer)
-{
-    // we populate the string starting from the end of the buffer...
-    char* bufend = buffer+(4*nchar+2);
-    *--bufend = '\0';
-    *--bufend = '\n';
-    int i;
-    for(i=nchar-1; i>=0;i--)
-    {
-        int c = chararray[i];
-        if(i != nchar-1)
-            *--bufend = ' ';
-        while(c >= 10)
-        {
-            *--bufend = c % 10 + '0';
-            c/=10;
-        }
-        *--bufend = c + '0';
-    }
-    return bufend;
+    return img->header.operations.magic_number(img);
 }
 
 img_error_t image_write(const char* path, image_t image)
 {
-
     FILE* fp;
-    char buff[BUF_LENGTH];
-    int i;
-
     fp = fopen(path, "wb");
-
     if(fp == NULL)
         return ECREATEFILE;
 
-    switch(image.header.format)
-    {
-        case PPM:
-            snprintf(buff, BUF_LENGTH, "%s\n", get_magic_number(&image.header));
-            fwrite(buff, sizeof(char), strlen(buff), fp);
-            snprintf(buff, BUF_LENGTH, "%d %d\n", image.header.width, image.header.height);
-            fwrite(buff, sizeof(char), strlen(buff), fp);
-            snprintf(buff, BUF_LENGTH, "%d\n", 255);
-            fwrite(buff, sizeof(char), strlen(buff), fp);
-            fwrite(image.data, sizeof(uint8_t), image_num_pixels(image.header), fp);
-            break;
-        case PLAIN_PPM:
-            fputs(get_magic_number(&image.header), fp);
-            fputc('\n', fp);
-            fprintf(fp, "%d %d\n", image.header.width, image.header.height);
-            fprintf(fp, "%d\n", 255);
-            int np = image_num_pixels(image.header);
-            for(i = 0; i < np;)
-            {
-                int length = (np - i) < LINE_LENGTH ? (np - i) : LINE_LENGTH;
-                char* ptr = line2string(&(image.data[i]), LINE_LENGTH, buff);
-                fputs(ptr, fp);
-                i += length;
-            }
-            break;
-    }
+    img_error_t ret = OK;
+    image.header.operations.write(&image, fp);
 
     fclose(fp);
-
-    return OK;
+    return ret;
 }
 
 void image_free(image_t* image)

@@ -210,9 +210,9 @@ BENCH_GETTIME(&tEnd);
 
 #ifdef BENCHMARK
     print_duration(tStart, tEnd, "total");
-    print_duration(tBoundsStart, tBoundsEnd, "bounds");
-    print_duration(tNormStart, tNormEnd, "normalization");
     print_duration(tOpenStart, tOpenEnd, "open");
+    print_duration(tBoundsStart, tBoundsEnd, "bounds (max and min)");
+    print_duration(tNormStart, tNormEnd, "normalization");
     print_duration(tSaveStart, tSaveEnd, "save");
 #endif
 
