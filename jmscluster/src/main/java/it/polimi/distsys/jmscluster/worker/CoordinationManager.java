@@ -46,6 +46,9 @@ public class CoordinationManager implements MessageListener {
 			if(om instanceof CoordinationMessage) {
 				CoordinationMessage cm = (CoordinationMessage)om;
 				tracker.update(cm.n, cm.jobs);
+				
+				if(tracker.canAccept())
+					this.notifyAll();
 			}
 		}
 	}

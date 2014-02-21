@@ -42,13 +42,16 @@ public class RequestAcceptorThread extends Thread {
 			{
 				while(!manager.okToAccept()) {
 					try {
-						wait();
+						manager.wait();
 					} catch(InterruptedException ie) {
 						ie.printStackTrace();
 						break;
 					}
 				}
-				processJobMessage(jobsRecv.receive(RECV_TIMEOUT));
+				Message newJob = jobsRecv.receive(RECV_TIMEOUT);
+				
+				if(newJob != null)
+					processJobMessage(newJob);
 			}
 		} catch(JMSException e) {
 			System.err.println("Error: trouble connecting with JMS...");
