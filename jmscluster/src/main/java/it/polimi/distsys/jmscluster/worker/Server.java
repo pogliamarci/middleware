@@ -64,7 +64,10 @@ public class Server {
 	}
 	
 	public static void main(String[] args) {
-		//TODO usage
+		if(args.length != 2) {
+			System.out.println("Usage: [id]");
+			return;
+		}
 		
 		final Server svr = new Server(Integer.parseInt(args[1]));
 		try {

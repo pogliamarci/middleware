@@ -18,6 +18,8 @@ import javax.jms.Session;
 
 public class RequestAcceptorThread extends Thread {
 	
+	static final long RECV_TIMEOUT = 1000;
+	
 	private QueueConnection jobsConn;
 	private Queue jobsQueue;
 	private CoordinationManager manager;
@@ -46,7 +48,7 @@ public class RequestAcceptorThread extends Thread {
 						break;
 					}
 				}
-				processJobMessage(jobsRecv.receive()); //TODO how to interrupt the receive???
+				processJobMessage(jobsRecv.receive(RECV_TIMEOUT));
 			}
 		} catch(JMSException e) {
 			System.err.println("Error: trouble connecting with JMS...");
