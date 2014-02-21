@@ -52,6 +52,7 @@ public class RequestAcceptorThread extends Thread {
 				
 				if(newJob != null)
 					processJobMessage(newJob);
+
 			}
 		} catch(JMSException e) {
 			System.err.println("Error: trouble connecting with JMS...");
