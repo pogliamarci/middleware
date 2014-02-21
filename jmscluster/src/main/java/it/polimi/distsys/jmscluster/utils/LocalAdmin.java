@@ -6,7 +6,6 @@ import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnectionFactory;
 import javax.naming.NamingException;
 
-import org.objectweb.joram.client.jms.ConnectionFactory;
 import org.objectweb.joram.client.jms.Queue;
 import org.objectweb.joram.client.jms.Topic;
 import org.objectweb.joram.client.jms.admin.AdminException;

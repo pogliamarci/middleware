@@ -41,7 +41,9 @@ public class Server {
 			
 			queueConn.start();
 			
+			
 			QueueReceiver recv = queueSession.createReceiver(jobsQueue);
+			// use recv.receive() ......
 			recv.setMessageListener(new JobsListener(queueConn));
 			
 		} catch (NamingException e) {
@@ -73,6 +75,9 @@ public class Server {
 		
 		final Server svr = new Server(Integer.parseInt(args[1]));
 		try {
+			// io farei in questo modo: un thread che ascolta i job quando deve farlo e un thread che gestisce le subscription...
+			// il thread che gestisce le subscription informa l'altro thread dei messaggi; l'altro thread gestisce il tutto.
+			// :-)
 			svr.go();
 		} catch (ConnectionException e) {
 			e.printStackTrace();
