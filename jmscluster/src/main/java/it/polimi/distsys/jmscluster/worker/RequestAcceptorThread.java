@@ -39,24 +39,13 @@ public class RequestAcceptorThread extends Thread {
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
 			jobsConn.start();
 			
-			while(true)
+			while(true) //TODO while(true)... anything better (i.e., intercept ctrl+c?)
 			{
-				while(!manager.okToAccept()) {
-					try {
-						manager.wait();
-					} catch(InterruptedException ie) {
-						ie.printStackTrace();
-						break;
-					}
-				}
-				System.err.println("sto ricevendo");
-				Message newJob = jobsRecv.receive();
-				System.err.println("non sto ricevendo");
+				manager.waitForAcceptanceCondition();
+				Message newJob = jobsRecv.receive(100);
 				
 				if(newJob != null)
 					processJobMessage(newJob);
-				else System.err.println("msg -> null");
-
 			}
 		} catch(JMSException e) {
 			System.err.println("Error: trouble connecting with JMS...");

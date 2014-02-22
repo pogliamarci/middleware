@@ -14,8 +14,13 @@ public class JobsTracker {
 		ongoingJobs = new AtomicInteger(0);
 	}
 	
+	public boolean exists(int n) {
+		return information.containsKey(n);
+	}
+	
 	public void join(int n) {
-		information.put(n, new AtomicInteger(0));
+		if(!information.containsKey(n))
+			information.put(n, new AtomicInteger(0));
 	}
 	
 	public void leave(int n) {
@@ -23,7 +28,8 @@ public class JobsTracker {
 	}
 	
 	public void update(int n, int cur) {
-		information.get(n).set(cur);
+		AtomicInteger ai = information.get(n);
+		if(ai != null) ai.set(cur);
 	}
 	
 	public void update(int cur) {
@@ -31,7 +37,8 @@ public class JobsTracker {
 	}
 	
 	public void addJob(int n) {
-		information.get(n).getAndIncrement();
+		AtomicInteger ai = information.get(n);
+		if(ai != null) ai.getAndIncrement();
 	}
 	
 	public void addJob() {
@@ -39,7 +46,8 @@ public class JobsTracker {
 	}
 	
 	public void removeJob(int n) {
-		information.get(n).decrementAndGet();
+		AtomicInteger ai = information.get(n);
+		if(ai != null) ai.decrementAndGet();
 	}
 	
 	public void removeJob() {

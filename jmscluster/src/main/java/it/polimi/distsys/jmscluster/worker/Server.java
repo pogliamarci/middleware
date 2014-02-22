@@ -42,19 +42,19 @@ public class Server {
 			queueConn = qcf.createQueueConnection();
 			
 			topicConn = tcf.createTopicConnection();
-			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 			
 			CoordinationManager manager = 
-					new CoordinationManager(tracker, topicSession, coordinationTopic, serverId);
+					new CoordinationManager(tracker, topicConn, coordinationTopic, serverId);
 			
+			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
+			
+			topicConn.start();
 			subs.setMessageListener(manager);
 			
 			RequestAcceptorThread acceptor = new RequestAcceptorThread(queueConn, jobsQueue, manager);
 
 			acceptor.run();
-			
-			topicConn.start();		
 
 		} catch (NamingException e) {
 			throw new ConnectionException("can't look up items (naming error)");

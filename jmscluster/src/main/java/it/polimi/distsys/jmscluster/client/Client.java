@@ -3,6 +3,7 @@ package it.polimi.distsys.jmscluster.client;
 import java.io.Serializable;
 
 import it.polimi.distsys.jmscluster.jobs.HelloWorldJob;
+import it.polimi.distsys.jmscluster.jobs.PauseJob;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 public class Client {
@@ -12,8 +13,10 @@ public class Client {
 		Serializable ret;
 		try {
 			client.connect();
-			ret = (String) client.submitJob(new HelloWorldJob("Hello, World!"));
-			ret = (String) client.submitJob(new HelloWorldJob("Ciao, Mondo!"));
+			client.submitJobAsync(new HelloWorldJob("JOB 1!"));
+			client.submitJobAsync(new PauseJob("JOB 2"));
+			client.submitJobAsync(new PauseJob("JOB 3"));
+			ret = (String) client.submitJob(new HelloWorldJob("JOB 4"));
 			System.out.println(ret);
 			client.disconnect();
 		} catch (JobSubmissionFailedException | ConnectionException e) {
