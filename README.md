@@ -7,6 +7,6 @@ academic year 2013-2014.
 
 The project is composed by three assignments, to be chosen among a list of five.
 
-* Parallel image normalization with MPI & OpenMP
-* Grid Computing with JMS
-* Power monitoring with Hadoop
+* [Parallel image normalization with MPI & OpenMP](imgnormalize/README.md)
+* [Grid Computing with JMS](jmscluster/README.md)
+* [Power monitoring with Hadoop](hadoop/README.md)

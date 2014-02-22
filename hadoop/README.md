@@ -1,13 +1,14 @@
 Power monitoring with Hadoop
 ============================
 
-The [http://corsi.dei.polimi.it/distsys/pub/data-generator.jar](data-generator.jar)
+The [data-generator.jar](http://corsi.dei.polimi.it/distsys/pub/data-generator.jar)
 Java program generates a dataset of a random set of smart plugs, each being
-part of a household, which is, in turn, part of a house. Each smart plug
-records the actual load (in Watts) at each second. The generated dataset is
-inspired by the [http://www.cse.iitb.ac.in/debs2014/?page_id=42](DEBS 2014
-challenge) and follow a similar format: a sequence of
-6 comma separated values for each line (i.e., for each reading)
+part of a household, which is, in turn, part of a house.
+Each smart plug records the actual load (in Watts) at each second. The
+generated dataset is inspired by the [DEBS 2014
+challenge](http://www.cse.iitb.ac.in/debs2014/?page_id=42) and follow a similar
+format: a sequence of 6 comma separated values for each line (i.e., for each
+reading)
 
 * a unique identifier of the measurement [64 bit unsigned integer value]
 * a timestamp of measurement (number of seconds since January 1, 1970, 00:00:00
