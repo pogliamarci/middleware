@@ -67,6 +67,8 @@ public class GridClient {
 	public Serializable submitJob(Job j) throws JobSubmissionFailedException {
 		if(!connected)
 			throw new JobSubmissionFailedException("Client is not connected");	
+		String cid = postJob(j);
+		listener.jobPosted(cid);
 		return listener.get(postJob(j));
 	}
 	
@@ -85,11 +87,15 @@ public class GridClient {
 		//thread to wait for everyone (and then waking up only the "right" future). Maybe this
 		//is already implemented in the JMS APIs, maybe not. Need to check!
 		final String corrId = postJob(j);
+		listener.jobPosted(corrId);
 		return pool.submit(new Callable<Serializable>() {
 				@Override
 				public Serializable call() {
 					synchronized(listener) {
-						return listener.get(corrId);
+						System.out.println("chiamato");
+						Serializable ret = listener.get(corrId);
+						System.out.println("ritornato");
+						return ret;
 					}
 				}
 			});
@@ -98,7 +104,9 @@ public class GridClient {
 	
 	public void disconnect() throws ConnectionException {
 		connected = false;
+		listener.waitForOutstandingReplies();
 		try {
+			listener.disconnect();
 			conn.stop();
 		} catch (JMSException e) {
 			throw new ConnectionException("can't stop connection");
@@ -115,5 +123,11 @@ public class GridClient {
 		} catch (JMSException e) {
 			throw new JobSubmissionFailedException(e);
 		}	
+	}
+
+	public void submitJobNoReply(Job j) throws JobSubmissionFailedException {
+		if(!connected)
+			throw new JobSubmissionFailedException("Client is not connected");	
+		postJob(j);
 	}
 }

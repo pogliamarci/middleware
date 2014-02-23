@@ -19,6 +19,7 @@ public class Client {
 			ret = (String) client.submitJob(new HelloWorldJob("JOB 4"));
 			System.out.println(ret);
 			client.disconnect();
+			System.exit(0);
 		} catch (JobSubmissionFailedException | ConnectionException e) {
 			e.printStackTrace();
 		}
