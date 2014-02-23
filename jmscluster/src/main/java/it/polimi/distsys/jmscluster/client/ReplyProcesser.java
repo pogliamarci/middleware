@@ -46,10 +46,14 @@ public class ReplyProcesser {
 	}
 
 	public synchronized Serializable get(String corrId) {
-		while(results.get(corrId) == null)
+		return get(corrId, 0);
+	}
+	
+	public synchronized Serializable get(String corrId, long millis) {
+		while(!results.containsKey(corrId))
 		{
 			try {
-				wait();
+				wait(millis);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -57,6 +61,10 @@ public class ReplyProcesser {
 		Serializable ret = results.get(corrId);
 		results.remove(corrId);
 		return ret;
+	}
+	
+	public synchronized boolean isReady(String corrId) {
+		return results.containsKey(corrId);
 	}
 	
 	public void disconnect() throws JMSException {
@@ -91,7 +99,11 @@ public class ReplyProcesser {
 			}
 		}
 	}
-	
-	
+
+	public void markAsCancelled(String corrId) {
+		//TODO to be implemented...... in order not to waste resource,
+		// if the future is cancelled we should make sure to discard the
+		// result of the call...
+	}
 	
 }

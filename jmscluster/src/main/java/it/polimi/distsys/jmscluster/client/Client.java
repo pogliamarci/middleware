@@ -1,6 +1,8 @@
 package it.polimi.distsys.jmscluster.client;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import it.polimi.distsys.jmscluster.jobs.HelloWorldJob;
 import it.polimi.distsys.jmscluster.jobs.PauseJob;
@@ -13,11 +15,18 @@ public class Client {
 		Serializable ret;
 		try {
 			client.connect();
-			client.submitJobAsync(new HelloWorldJob("JOB 1!"));
-			client.submitJobAsync(new PauseJob("JOB 2"));
-			client.submitJobAsync(new PauseJob("JOB 3"));
+			Future<Serializable> r1 = client.submitJobAsync(new HelloWorldJob("JOB 1!"));
+			Future<Serializable> r2 = client.submitJobAsync(new PauseJob("JOB 2"));
+			Future<Serializable> r3 = client.submitJobAsync(new PauseJob("JOB 3"));
 			ret = (String) client.submitJob(new HelloWorldJob("JOB 4"));
 			System.out.println(ret);
+			try {
+				System.out.println(r1.get());
+				System.out.println(r2.get());
+				System.out.println(r3.get());
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
 			client.disconnect();
 			System.exit(0);
 		} catch (JobSubmissionFailedException | ConnectionException e) {

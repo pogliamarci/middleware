@@ -4,9 +4,6 @@ import it.polimi.distsys.jmscluster.jobs.Job;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 import java.io.Serializable;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.jms.JMSException;
@@ -20,6 +17,12 @@ import javax.jms.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+//The methods of an object of this class are intended to be called always by the
+//same thread, because in the JMS model there could be only a single thread
+//that uses one session, and this class holds a JMS session.
+//A more general approach would be for this class to spawn a thread that 
+//holds the session, listening to job post requests. However, for simplicity,
+//we limit ourselves to ask the caller to take care about this.
 public class GridClient {
 
 	private boolean connected;
@@ -29,7 +32,6 @@ public class GridClient {
 	private Queue tempQueue;
 	private MessageProducer jobQueuePublisher;
 	private ReplyProcesser listener;
-	private ExecutorService pool = Executors.newCachedThreadPool();
 	
 	public GridClient() {
 		connected = false;
@@ -38,9 +40,7 @@ public class GridClient {
 	public void connect() throws ConnectionException {
 		if(connected)
 			return;
-		
 		QueueConnectionFactory qcf;
-
 		try {
 			InitialContext ictx = new InitialContext();
 			qcf = (QueueConnectionFactory) ictx.lookup("qcf");
@@ -49,7 +49,6 @@ public class GridClient {
 		} catch (NamingException e) {
 				throw new ConnectionException("can't look up items (naming error)");
 		}
-
 		try {
 			conn = qcf.createQueueConnection();
 			session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -75,28 +74,10 @@ public class GridClient {
 	public Future<Serializable> submitJobAsync(Job j) throws JobSubmissionFailedException {
 		if(!connected)
 			throw new JobSubmissionFailedException("Client is not connected");
-		
-		//TODO for simplicity, here we call postJob from within this thread.
-		//A better approach would be waking up a poster thread that does 
-		//the operation asynchronously.
-		//Can't just place postJob() inside the callable because JMS wants that every
-		//operation belonging to the same session is performed by the same thread.
-		//Also, the use of Callable is not very scalable, because it spawns a thread
-		//just to check whether a result is finished. Maybe it is better to do something
-		//finer, such as building an object similar to the Futures but that allows a single
-		//thread to wait for everyone (and then waking up only the "right" future). Maybe this
-		//is already implemented in the JMS APIs, maybe not. Need to check!
+
 		final String corrId = postJob(j);
 		listener.jobPosted(corrId);
-		return pool.submit(new Callable<Serializable>() {
-				@Override
-				public Serializable call() {
-					synchronized(listener) {
-						Serializable ret = listener.get(corrId);
-						return ret;
-					}
-				}
-			});
+		return new AsyncResult(corrId, listener);
 	}
 	
 	public void disconnect() throws ConnectionException {
