@@ -23,7 +23,7 @@ import javax.naming.NamingException;
 //A more general approach would be for this class to spawn a thread that 
 //holds the session, listening to job post requests. However, for simplicity,
 //we limit ourselves to ask the caller to take care about this.
-public class GridClient {
+public class ClusterClient {
 
 	private boolean connected;
 	private QueueConnection conn;
@@ -33,7 +33,7 @@ public class GridClient {
 	private MessageProducer jobQueuePublisher;
 	private ReplyProcesser listener;
 	
-	public GridClient() {
+	public ClusterClient() {
 		connected = false;
 	}
 	
@@ -63,7 +63,8 @@ public class GridClient {
 		connected = true;
 	}
 	
-	public Serializable submitJob(Job j) throws JobSubmissionFailedException {
+	public Serializable submitJob(Job j) 
+			throws JobSubmissionFailedException, InterruptedException {
 		if(!connected)
 			throw new JobSubmissionFailedException("Client is not connected");	
 		String cid = postJob(j);
@@ -71,18 +72,23 @@ public class GridClient {
 		return listener.get(cid);
 	}
 	
-	public Future<Serializable> submitJobAsync(Job j) throws JobSubmissionFailedException {
+	public Future<Serializable> submitJobAsync(Job j) 
+			throws JobSubmissionFailedException {
 		if(!connected)
 			throw new JobSubmissionFailedException("Client is not connected");
 
-		final String corrId = postJob(j);
+		String corrId = postJob(j);
 		listener.jobPosted(corrId);
 		return new AsyncResult(corrId, listener);
 	}
 	
 	public void disconnect() throws ConnectionException {
 		connected = false;
-		listener.waitForOutstandingReplies();
+		try {
+			listener.waitForOutstandingReplies();
+		} catch(InterruptedException ie) {
+			Thread.currentThread().interrupt();
+		}
 		try {
 			listener.disconnect();
 			conn.stop();

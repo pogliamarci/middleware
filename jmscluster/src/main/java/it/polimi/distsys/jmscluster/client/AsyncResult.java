@@ -26,7 +26,8 @@ public class AsyncResult implements Future<Serializable> {
 	}
 
 	@Override
-	public Serializable get() throws InterruptedException, ExecutionException {
+	public Serializable get() 
+			throws InterruptedException, ExecutionException {
 		return listener.get(corrId);
 	}
 
