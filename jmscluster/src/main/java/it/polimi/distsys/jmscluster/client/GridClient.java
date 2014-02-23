@@ -69,7 +69,7 @@ public class GridClient {
 			throw new JobSubmissionFailedException("Client is not connected");	
 		String cid = postJob(j);
 		listener.jobPosted(cid);
-		return listener.get(postJob(j));
+		return listener.get(cid);
 	}
 	
 	public Future<Serializable> submitJobAsync(Job j) throws JobSubmissionFailedException {
@@ -92,14 +92,11 @@ public class GridClient {
 				@Override
 				public Serializable call() {
 					synchronized(listener) {
-						System.out.println("chiamato");
 						Serializable ret = listener.get(corrId);
-						System.out.println("ritornato");
 						return ret;
 					}
 				}
 			});
-		
 	}
 	
 	public void disconnect() throws ConnectionException {
