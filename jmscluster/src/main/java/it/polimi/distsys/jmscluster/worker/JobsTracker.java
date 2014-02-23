@@ -18,9 +18,9 @@ public class JobsTracker {
 		return information.containsKey(n);
 	}
 	
-	public void join(int n) {
+	public void join(int n, int jobs) {
 		if(!information.containsKey(n))
-			information.put(n, new AtomicInteger(0));
+			information.put(n, new AtomicInteger(jobs));
 	}
 	
 	public void leave(int n) {

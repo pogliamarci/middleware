@@ -57,7 +57,7 @@ public class CoordinationManager implements MessageListener {
 		CoordinationMessage msg = new CoordinationMessage();
 		msg.type = Type.JOIN;
 		msg.n = id;
-		msg.jobs = 0;
+		msg.jobs = tracker.getJobs();
 		try {
 			pub.get().publish(session.get().createObjectMessage(msg));
 		} catch(JMSException e) {
@@ -108,7 +108,7 @@ public class CoordinationManager implements MessageListener {
 				System.err.println("Worker " + cm.n + " joined");
 				if(!tracker.exists(cm.n))
 					sendJoin(); // inform the existing processes of my existence...
-				tracker.join(cm.n);
+				tracker.join(cm.n, cm.jobs);
 				break;
 			case LEAVE:
 				System.err.println("Worker " + cm.n + " left");
