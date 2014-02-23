@@ -1,6 +1,6 @@
 package it.polimi.distsys.jmscluster.worker;
 
-import it.polimi.distsys.jmscluster.client.ConnectionException;
+import it.polimi.distsys.jmscluster.utils.ConnectionException;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
@@ -22,13 +22,9 @@ public class Server {
 	private TopicSession topicSession;
 	private TopicConnection topicConn;
 	
-	private JobsTracker tracker;
-	
 	public Server(int id) {
 		serverId = id;
-		tracker = new JobsTracker();
 	}
-		
 	
 	public void go() throws ConnectionException {
 		try {
@@ -43,17 +39,22 @@ public class Server {
 			
 			topicConn = tcf.createTopicConnection();
 			
+			JobsTracker tracker = new JobsTracker();
 			CoordinationManager manager = 
-					new CoordinationManager(tracker, topicConn, coordinationTopic, serverId);
+					new CoordinationManager(topicConn, coordinationTopic, serverId, tracker);
 			
 			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
-			
 			topicConn.start();
 			subs.setMessageListener(manager);
 			
-			RequestAcceptorThread acceptor = new RequestAcceptorThread(queueConn, jobsQueue, manager);
-
+			manager.sendJoin(); // join after the listener is subscribed...
+			
+			JobsListener acceptor = new JobsListener(queueConn, jobsQueue);
+			
+			acceptor.addListener(manager);
+			tracker.addObserver(acceptor);
+			
 			acceptor.run();
 
 		} catch (NamingException e) {
@@ -65,15 +66,17 @@ public class Server {
 	
 	public static void main(String[] args) {
 		if(args.length != 1) {
-			System.out.println("Usage: [id]");
-			return;
+			System.out.println("Usage: server [id]");
+			System.exit(1);
 		}
 		
-		final Server svr = new Server(Integer.parseInt(args[0]));
+		Server svr = new Server(Integer.parseInt(args[0]));
 		try {
 			svr.go();
 		} catch (ConnectionException e) {
-			e.printStackTrace();
+			System.err.println("Connection error: " + e.getMessage() + ".");
+			System.err.println("Quitting.");
+			System.exit(1);
 		}
 	}
 	

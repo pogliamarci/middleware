@@ -1,4 +1,4 @@
-package it.polimi.distsys.jmscluster.client;
+package it.polimi.distsys.jmscluster.utils;
 
 public class ConnectionException extends Exception {
 

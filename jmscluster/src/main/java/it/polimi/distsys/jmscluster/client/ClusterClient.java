@@ -1,6 +1,7 @@
 package it.polimi.distsys.jmscluster.client;
 
 import it.polimi.distsys.jmscluster.jobs.Job;
+import it.polimi.distsys.jmscluster.utils.ConnectionException;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 import java.io.Serializable;

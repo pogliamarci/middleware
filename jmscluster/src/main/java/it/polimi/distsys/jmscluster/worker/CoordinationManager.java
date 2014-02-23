@@ -1,5 +1,8 @@
 package it.polimi.distsys.jmscluster.worker;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import it.polimi.distsys.jmscluster.worker.CoordinationMessage.Type;
 
 import javax.jms.JMSException;
@@ -12,7 +15,7 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 
-public class CoordinationManager implements MessageListener {
+public class CoordinationManager implements MessageListener, JobsStartingListener {
 
 	private JobsTracker tracker;
 	private TopicConnection connection;
@@ -20,18 +23,21 @@ public class CoordinationManager implements MessageListener {
 	private final ThreadLocal<TopicPublisher> pub;
 	private int id;
 	
-	public CoordinationManager(JobsTracker tracker, TopicConnection conn, 
-			Topic coord, int sid) throws JMSException {
+	public CoordinationManager(TopicConnection conn, 
+			Topic coord, int sid, JobsTracker tracker) throws JMSException {
 		final Topic topic = coord;
-		this.tracker = tracker;
 		this.id = sid;
 		this.connection = conn;
+		this.tracker = tracker;
+
 		session = new ThreadLocal<TopicSession>() {
             @Override protected TopicSession initialValue() {
                 try {
 					return connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 				} catch (JMSException e) {
-					e.printStackTrace();
+					Logger l = Logger.getLogger(this.getClass().getName());
+					l.log(Level.WARNING, "Error creating session: " + e.getMessage());
+					System.exit(1);
 					return null;
 				}
             }
@@ -41,33 +47,77 @@ public class CoordinationManager implements MessageListener {
         		try {
 					return session.get().createPublisher(topic);
 				} catch (JMSException e) {
-					e.printStackTrace();
+					Logger l = Logger.getLogger(this.getClass().getName());
+					l.log(Level.WARNING, "Error creating publisher: " + e.getMessage());
+					System.exit(1);
 					return null;
 				}
         	}
         };
-		/*
-		 *this.pub = session.createPublisher(coord); 
-		 */
-		
-		sendJoin();
 	}
-	
-	private void sendJoin() {
-		CoordinationMessage msg = new CoordinationMessage();
-		msg.type = Type.JOIN;
-		msg.n = id;
-		msg.jobs = tracker.getJobs();
-		try {
-			pub.get().publish(session.get().createObjectMessage(msg));
-		} catch(JMSException e) {
-			e.printStackTrace();
-			System.err.println("Error publishing the coordination message.");
+
+	@Override
+	public void onMessage(Message message) {
+		if(message instanceof ObjectMessage) {
+			ObjectMessage om = (ObjectMessage) message;
+			try {
+				Object o = om.getObject();
+				if(o instanceof CoordinationMessage) {
+					onMessage((CoordinationMessage) o);
+				} else {
+					Logger l = Logger.getLogger(this.getClass().getName());
+					l.log(Level.WARNING, "Received unknown message on the coordination topic");
+				}
+			} catch(JMSException e) {
+				Logger l = Logger.getLogger(this.getClass().getName());
+				l.log(Level.WARNING, "Error receiving message: " + e.getMessage());
+			}
+		} else {
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Received unknown message on the coordination topic");
 		}
 	}
 	
-	public void addJob() {
+	private void onMessage(CoordinationMessage cm)
+	{
+		/* drop messages sent by the process itself */
+		if(cm.n == id)
+		{
+			return;
+		}
+		switch(cm.type) {
+		case UPDATE:
+			tracker.update(cm.n, cm.jobs);
+			break;
+		case JOIN:
+			if(!tracker.exists(cm.n))
+			{
+				sendJoin(); // inform the existing processes of my existence...
+			}
+			tracker.join(cm.n, cm.jobs);
+			break;
+		case LEAVE:
+			tracker.leave(cm.n);
+			break;
+		default:
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Received coordination message with unknown type");
+		}
+	}
+
+	@Override
+	public void signalJobStart() {
 		tracker.addJob();
+		sendUpdate();
+	}
+
+	@Override
+	public void signalJobEnd() {
+		tracker.removeJob();
+		sendUpdate();
+	}
+	
+	private void sendUpdate() {
 		CoordinationMessage msg = new CoordinationMessage();
 		msg.type = Type.UPDATE;
 		msg.n = id;
@@ -75,64 +125,22 @@ public class CoordinationManager implements MessageListener {
 		try {
 			pub.get().publish(session.get().createObjectMessage(msg));
 		} catch(JMSException e) {
-			e.printStackTrace();
-			System.err.println("Error publishing the coordination message.");
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
 		}
 	}
-
-	public boolean okToAccept() {
-		return tracker.canAccept();
-	}
-
-	@Override
-	public void onMessage(Message message) {
-		if(message instanceof ObjectMessage) {
-			ObjectMessage om = (ObjectMessage) message;
-			CoordinationMessage cm;
-			try {
-				Object o = om.getObject();
-				if(o instanceof CoordinationMessage) {
-					cm = (CoordinationMessage) o;
-				} else return;
-			} catch(JMSException e) {
-				return;
-			}
-			/* drop messages sent by the process itself */
-			if(cm.n == id)
-				return;
-			switch(cm.type) {
-			case UPDATE:
-				tracker.update(cm.n, cm.jobs);
-				break;
-			case JOIN:
-				System.err.println("Worker " + cm.n + " joined");
-				if(!tracker.exists(cm.n))
-					sendJoin(); // inform the existing processes of my existence...
-				tracker.join(cm.n, cm.jobs);
-				break;
-			case LEAVE:
-				System.err.println("Worker " + cm.n + " left");
-				tracker.leave(cm.n);
-				break;
-			}
+	
+	public void sendJoin() { //TODO ugly this should not be public, but for now it works :)
+		CoordinationMessage msg = new CoordinationMessage();
+		msg.type = Type.JOIN;
+		msg.n = id;
+		msg.jobs = tracker.getJobs();
+		try {
+			pub.get().publish(session.get().createObjectMessage(msg));
+		} catch(JMSException e) {
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
 		}
-		synchronized(this)
-		{
-			notifyAll();
-		}
-	}
-
-	public synchronized void waitForAcceptanceCondition() {
-			while(!okToAccept()) {
-				System.err.println("Not accepting jobs...");
-				try {
-					wait();
-				} catch(InterruptedException ie) {
-					ie.printStackTrace();
-					break;
-				}
-				System.err.println("Going back to accept jobs...");
-			}
 	}
 	
 }

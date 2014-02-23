@@ -6,6 +6,7 @@ import java.util.concurrent.Future;
 
 import it.polimi.distsys.jmscluster.jobs.HelloWorldJob;
 import it.polimi.distsys.jmscluster.jobs.PauseJob;
+import it.polimi.distsys.jmscluster.utils.ConnectionException;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 public class Client {
