@@ -7,7 +7,7 @@ import it.polimi.distsys.jmscluster.jobs.PauseJob;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 public class Client {
-	
+
 	public static void main(String[] args) {
 		GridClient client = new GridClient();
 		Serializable ret;
@@ -24,5 +24,5 @@ public class Client {
 			e.printStackTrace();
 		}
 	}
-	
+
 }

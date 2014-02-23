@@ -125,9 +125,4 @@ public class GridClient {
 		}	
 	}
 
-	public void submitJobNoReply(Job j) throws JobSubmissionFailedException {
-		if(!connected)
-			throw new JobSubmissionFailedException("Client is not connected");	
-		postJob(j);
-	}
 }
