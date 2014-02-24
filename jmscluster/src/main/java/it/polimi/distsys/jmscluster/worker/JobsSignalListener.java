@@ -1,6 +1,6 @@
 package it.polimi.distsys.jmscluster.worker;
 
-public interface JobsStartingListener {
+public interface JobsSignalListener {
 
 	void signalJobStart();
 	void signalJobEnd();

@@ -15,18 +15,18 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 
-public class CoordinationManager implements MessageListener, JobsStartingListener {
+public class Coordinator implements MessageListener, JobsSignalListener {
 
 	private JobsTracker tracker;
 	private TopicConnection connection;
 	private final ThreadLocal<TopicSession> session;
 	private final ThreadLocal<TopicPublisher> pub;
-	private int id;
+	private int serverId;
 	
-	public CoordinationManager(TopicConnection conn, 
+	public Coordinator(TopicConnection conn, 
 			Topic coord, int sid, JobsTracker tracker) throws JMSException {
 		final Topic topic = coord;
-		this.id = sid;
+		this.serverId = sid;
 		this.connection = conn;
 		this.tracker = tracker;
 
@@ -81,7 +81,7 @@ public class CoordinationManager implements MessageListener, JobsStartingListene
 	private void onMessage(CoordinationMessage cm)
 	{
 		/* drop messages sent by the process itself */
-		if(cm.n == id)
+		if(cm.n == serverId)
 		{
 			return;
 		}
@@ -120,7 +120,7 @@ public class CoordinationManager implements MessageListener, JobsStartingListene
 	private void sendUpdate() {
 		CoordinationMessage msg = new CoordinationMessage();
 		msg.type = Type.UPDATE;
-		msg.n = id;
+		msg.n = serverId;
 		msg.jobs = tracker.getJobs();
 		try {
 			pub.get().publish(session.get().createObjectMessage(msg));
@@ -133,7 +133,7 @@ public class CoordinationManager implements MessageListener, JobsStartingListene
 	public void sendJoin() { //TODO ugly this should not be public, but for now it works :)
 		CoordinationMessage msg = new CoordinationMessage();
 		msg.type = Type.JOIN;
-		msg.n = id;
+		msg.n = serverId;
 		msg.jobs = tracker.getJobs();
 		try {
 			pub.get().publish(session.get().createObjectMessage(msg));

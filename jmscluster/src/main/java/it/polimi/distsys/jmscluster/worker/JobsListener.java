@@ -37,10 +37,8 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	private QueueConnection jobsConn;
 	private Queue jobsQueue;
 	private boolean isOk;
-	
-	private QueueReceiver jobsRecv;
-	
-	private List<JobsStartingListener> lsts;
+
+	private List<JobsSignalListener> lsts;
 	
 	private ExecutorService pool = Executors.newCachedThreadPool();
 	
@@ -48,10 +46,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		jobsConn = jqc;
 		jobsQueue = q;
 		isOk = false;
-		lsts = new ArrayList<JobsStartingListener>();
+		lsts = new ArrayList<JobsSignalListener>();
 	}
 	
-	public void addListener(JobsStartingListener lst) {
+	public void addListener(JobsSignalListener lst) {
 		lsts.add(lst);
 	}
 	
@@ -65,7 +63,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	public void run() {
 		try {
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-			jobsRecv = qs.createReceiver(jobsQueue);
+			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
 			jobsConn.start();
 			while(!interrupted())
 			{
@@ -106,13 +104,13 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	}
 	
 	private void signalJobStart() {
-		for(JobsStartingListener lst : lsts) {
+		for(JobsSignalListener lst : lsts) {
 			lst.signalJobStart();
 		}
 	}
 	
 	private void signalJobEnd() {
-		for(JobsStartingListener lst : lsts) {
+		for(JobsSignalListener lst : lsts) {
 			lst.signalJobEnd();
 		}
 	}

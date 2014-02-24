@@ -40,8 +40,8 @@ public class Server {
 			topicConn = tcf.createTopicConnection();
 			
 			JobsTracker tracker = new JobsTracker();
-			CoordinationManager manager = 
-					new CoordinationManager(topicConn, coordinationTopic, serverId, tracker);
+			Coordinator manager = 
+					new Coordinator(topicConn, coordinationTopic, serverId, tracker);
 			
 			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
