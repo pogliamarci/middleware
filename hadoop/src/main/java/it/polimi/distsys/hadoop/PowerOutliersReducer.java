@@ -14,9 +14,13 @@ import org.apache.hadoop.mapreduce.Reducer;
 public class PowerOutliersReducer extends Reducer<PowerOutliersKey, PowerOutliersValue, PowerOutliersKey, DoubleWritable> {
 	
 	@Override
-	protected void reduce(PowerOutliersKey key, Iterable<PowerOutliersValue> values, Context context) throws IOException, InterruptedException {
+	protected void reduce(PowerOutliersKey key, Iterable<PowerOutliersValue> values, Context context) 
+			throws IOException, InterruptedException {
 		
+		// collects all the measurements for each plug
 		Map<Integer, List<Integer>> mp = new HashMap<Integer, List<Integer>>();
+		
+		// a list of all the measurements (that will be sorted)
 		List<Integer> loi = new ArrayList<Integer>();
 		for(PowerOutliersValue v : values)
 		{
