@@ -10,20 +10,24 @@ import org.apache.hadoop.io.Writable;
 
 public class PowerOutliersValue implements Writable {
 	
+	private IntWritable household;
 	private IntWritable plug;
 	private IntWritable measurement;
-	private IntWritable household;
 	
 	public PowerOutliersValue() {
+		household = new IntWritable();
 		plug = new IntWritable();
 		measurement = new IntWritable();
-		household = new IntWritable();
 	}
 	
 	public PowerOutliersValue(int household, int plug, int measurement) {
+		this.household = new IntWritable(household);
 		this.plug = new IntWritable(plug);
 		this.measurement = new IntWritable(measurement);
-		this.household = new IntWritable(household);
+	}
+	
+	public int getHousehold() {
+		return household.get();
 	}
 	
 	public int getPlug() {
@@ -32,10 +36,6 @@ public class PowerOutliersValue implements Writable {
 	
 	public int getMeasurement() {
 		return measurement.get();
-	}
-	
-	public int getHousehold() {
-		return household.get();
 	}
 	
 	@Override

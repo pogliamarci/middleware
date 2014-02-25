@@ -11,44 +11,50 @@ import java.util.Map.Entry;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
-public class PowerOutliersReducer extends Reducer<PowerOutliersKey, PowerOutliersValue, PowerOutliersKey, DoubleWritable> {
-	
+public class PowerOutliersReducer
+		extends
+		Reducer<PowerOutliersKey, PowerOutliersValue, PowerOutliersKey, DoubleWritable> {
+
 	@Override
-	protected void reduce(PowerOutliersKey key, Iterable<PowerOutliersValue> values, Context context) throws IOException, InterruptedException {
+	protected void reduce(PowerOutliersKey key,
+			Iterable<PowerOutliersValue> values, Context context)
+			throws IOException, InterruptedException {
+
+		List<Integer> valueList = new ArrayList<Integer>();
+		Map<IntPair, List<Integer>> mp = new HashMap<IntPair, List<Integer>>();
+		for(PowerOutliersValue val : values) {
+			int meas = val.getMeasurement();
+			valueList.add(meas);
+			IntPair p = new IntPair(val.getHousehold(), val.getPlug());
+			if (!mp.containsKey(p)) {
+				mp.put(p, new ArrayList<Integer>());
+			}
+			mp.get(p).add(meas);
+		}
 		
-		Map<Integer, List<Integer>> mp = new HashMap<Integer, List<Integer>>();
-		List<Integer> loi = new ArrayList<Integer>();
-		for(PowerOutliersValue v : values)
-		{
-			loi.add(v.getMeasurement());
-			if(mp.get(v.getPlug()) == null) {
-				mp.put(v.getPlug(), new ArrayList<Integer>());
-			}
-			mp.get(v.getPlug()).add(v.getMeasurement());
-		}
+		int overallMedian = median(valueList);
 
-		int median = computeMedian(loi);
-
-		int tn = 0, p = 0;
-		for(Entry<Integer, List<Integer>> e : mp.entrySet())
-		{
-			tn++;
-			int m = computeMedian(e.getValue());
-			if(m > median) {
-				p += 1;
+		/*
+		 * Compute the outliers
+		 */
+		int totalPlugs = mp.size();
+		int outliers = 0;
+		for (Entry<IntPair, List<Integer>> e : mp.entrySet()) {
+			if (median(e.getValue()) > overallMedian) {
+				outliers++;
 			}
 		}
-		context.write(key, new DoubleWritable(((double) tn / (double) p)));
+		double ratio = (double) outliers / (double) totalPlugs;
+		context.write(key, new DoubleWritable(ratio * 100));
 	}
-	
-	private int computeMedian(List<Integer> loi) {
+
+	private int median(List<Integer> loi) {
+		assert (loi.size() > 0);
 		Collections.sort(loi);
-		if(loi.size() == 0)
-			throw new IllegalArgumentException();
-		if(loi.size()%2 == 0) {
-			return (loi.get(loi.size()/2) + loi.get(loi.size()/2 -1)) / 2;
+		if (loi.size() % 2 == 0) {
+			return (loi.get(loi.size() / 2) + loi.get(loi.size() / 2 - 1)) / 2;
 		} else {
-			return loi.get(loi.size()/2);
+			return loi.get(loi.size() / 2);
 		}
 	}
 
