@@ -51,32 +51,32 @@ instead of identifiers.
   larger cluster), with a replication value for HDFS of at least 2
 
 
-Installation
-============
+## Installation
 
 This project uses Apache Maven to compile and it has been tested with Maven 3.1.1 and Hadoop 2.2.0 under a Unix environment.
 Java SE 7 or later is also required.
 
 To compile the code and produce the JAR file, install Maven, put the `bin` directory in your `PATH` and execute
 
-   mvn package
+```
+mvn package
+```
 
 This command will download all the necessary dependencies and produce the `hadoop-prj-0.1.jar` file.
 
-Execution
-=========
+## Execution
 
 Install Apache Hadoop 2.2.0, then configure the `JAVA_HOME` variable in the `hadoop-2.2.0/etc/hadoop/hadoop-env.sh` script.
 Make sure that the `hadoop-2.2.0/logs` directory is writable by the user who executes the Hadoop jobs.
 
 To run the application in standalone mode, the default configuration is enough; to run it, put the `bin` and `sbin` directories of Hadoop in your `PATH` and execute
-
-   $ java -jar data/data-generator.jar <number of seconds> > /tmp/dataset.csv
-   $ hadoop jar hadoop-prj-0.1.jar -fs file:/// /tmp/dataset.csv output
-
+```
+$ java -jar data/data-generator.jar <number of seconds> > /tmp/dataset.csv
+$ hadoop jar hadoop-prj-0.1.jar -fs file:/// /tmp/dataset.csv output
+```
 The `output` directory should not exist.
 
-#### Cluster mode
+### Cluster mode
 
 The steps required to setup the cluster are the following:
 * Install Hadoop on all the machines in the same directory
@@ -95,27 +95,28 @@ The steps required to setup the cluster are the following:
   passing the argument `--config <path_to_the_config>` to every Hadoop command.
 
 Finally, on the master node, format the filesystem and start the daemons
-
-   $ hdfs [--config <conf>] namenode -format
-   $ start-dfs.sh [--config <conf>]
-   $ start-yarn.sh [--config <conf>]
-   $ mr-jobhistory-daemon.sh [--config <conf>] start historyserver
-
+```
+$ hdfs [--config <conf>] namenode -format
+$ start-dfs.sh [--config <conf>]
+$ start-yarn.sh [--config <conf>]
+$ mr-jobhistory-daemon.sh [--config <conf>] start historyserver
+```
 The `jps` command shows all the daemons that are running: in the master node, there should be the `NameNode`, a `DataNode`, the `NodeManager`, the `ResourceManager` and the `HistoryServer`.
 If some of them are missing, check the logs under the Hadoop installation directory.
 
-Now you can copy the input and execute the demonstrated
-
-   $ java -jar data/data-generator.jar <number of seconds> > /tmp/dataset.csv
-   $ hadoop [--config <conf>] fs -mkdir -p /user/<username>
-   $ hadoop [--config <conf>] fs -copyFromLocal /tmp/dataset.csv .
-   $ hadoop [--config <conf>] jar hadoop-prj-0.1.jar dataset.csv output
-
+Now you can copy the input and execute the demo
+```
+$ java -jar data/data-generator.jar <number of seconds> > /tmp/dataset.csv
+$ hadoop [--config <conf>] fs -mkdir -p /user/<username>
+$ hadoop [--config <conf>] fs -copyFromLocal /tmp/dataset.csv .
+$ hadoop [--config <conf>] jar hadoop-prj-0.1.jar dataset.csv output
+```
 To see the result of the job execute the following
-
-   $ hadoop [--config <conf>] fs -cat output/part-r-00000
-
+```
+$ hadoop [--config <conf>] fs -cat output/part-r-00000
+```
 In order to run again the program, you need to delete the `output` directory and its contents:
-
-   $ hadoop [--config <conf>] fs -rm output/*
-   $ hadoop [--config <conf>] fs -rmdir output
+```
+$ hadoop [--config <conf>] fs -rm output/*
+$ hadoop [--config <conf>] fs -rmdir output
+```
