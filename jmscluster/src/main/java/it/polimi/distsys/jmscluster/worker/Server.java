@@ -21,6 +21,8 @@ public class Server {
 	private QueueConnection queueConn;
 	private TopicSession topicSession;
 	private TopicConnection topicConn;
+	private Coordinator manager;
+	private JobsListener acceptor;
 	
 	public Server(int id) {
 		serverId = id;
@@ -40,8 +42,7 @@ public class Server {
 			topicConn = tcf.createTopicConnection();
 			
 			JobsTracker tracker = new JobsTracker();
-			Coordinator manager = 
-					new Coordinator(topicConn, coordinationTopic, serverId, tracker);
+			manager =  new Coordinator(topicConn, coordinationTopic, serverId, tracker);
 			
 			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
@@ -50,12 +51,15 @@ public class Server {
 			
 			manager.sendJoin(); // join after the listener is subscribed...
 			
-			JobsListener acceptor = new JobsListener(queueConn, jobsQueue);
+			acceptor = new JobsListener(queueConn, jobsQueue);
+			CommandLine cmd = new CommandLine(manager, acceptor);
 			
 			acceptor.addListener(manager);
 			tracker.addObserver(acceptor);
 			
-			acceptor.run();
+			acceptor.start();
+			
+			cmd.start();
 
 		} catch (NamingException e) {
 			throw new ConnectionException("can't look up items (naming error)");
@@ -64,7 +68,7 @@ public class Server {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws JMSException {
 		if(args.length != 1) {
 			System.out.println("Usage: server [id]");
 			System.exit(1);
