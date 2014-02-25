@@ -124,7 +124,7 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 		else
 			synchronized(this) {
 				this.notifyAll();
-		}
+			}
 	}
 	
 	public boolean queueIsEmpty() {

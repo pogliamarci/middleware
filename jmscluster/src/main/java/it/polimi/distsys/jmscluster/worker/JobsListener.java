@@ -32,11 +32,13 @@ import javax.jms.Session;
  */
 public class JobsListener extends Thread implements ServerStatusListener, MessageListener {
 	
-	static final long RECV_TIMEOUT = 500;
+	static final long RECV_TIMEOUT = 2500;
 	
 	private QueueConnection jobsConn;
 	private Queue jobsQueue;
 	private boolean isOk;
+	private boolean over;
+	private boolean isStopped;
 
 	private List<JobsSignalListener> lsts;
 	
@@ -46,6 +48,8 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		jobsConn = jqc;
 		jobsQueue = q;
 		isOk = false;
+		over = false;
+		isStopped = false;
 		lsts = new ArrayList<JobsSignalListener>();
 	}
 	
@@ -65,7 +69,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
 			jobsConn.start();
-			while(!interrupted())
+			while(!isStopped)
 			{
 				if(waitForAcceptanceCondition())
 				{
@@ -80,7 +84,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			l.log(Level.WARNING, "Error with JMS setup: " + e.getMessage());
 		}
 		
-		
+		synchronized(this) {
+			over = true;
+			notifyAll();
+		}
 	}
 
 	@Override
@@ -91,6 +98,15 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			signalJobStart();
 			pool.execute(new JobExecutor(msg, jobsConn));
 		}
+	}
+	
+	public boolean isOver() {
+		return over;
+	}
+	
+	public void stopListener() {
+		isStopped = true;
+		interrupt();
 	}
 	
 	private synchronized boolean waitForAcceptanceCondition()
