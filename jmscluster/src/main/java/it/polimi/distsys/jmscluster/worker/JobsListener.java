@@ -67,16 +67,19 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			jobsConn.start();
 			while(!interrupted())
 			{
-				waitForAcceptanceCondition();
-				Message newJob = jobsRecv.receive(RECV_TIMEOUT);
-				
-				if(newJob != null)
-					onMessage(newJob);
+				if(waitForAcceptanceCondition())
+				{
+					Message newJob = jobsRecv.receive(RECV_TIMEOUT);
+					
+					if(newJob != null)
+						onMessage(newJob);
+				}
 			}
 		} catch(JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
 			l.log(Level.WARNING, "Error with JMS setup: " + e.getMessage());
 		}
+		
 		
 	}
 
@@ -90,7 +93,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		}
 	}
 	
-	private synchronized void waitForAcceptanceCondition()
+	private synchronized boolean waitForAcceptanceCondition()
 	{
 		while(!isOk)
 		{
@@ -99,8 +102,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			} catch(InterruptedException e) {
 				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, 
 						"JobsListener thread interrupted while waiting!");
+				return false;
 			}
 		}
+		return true;
 	}
 	
 	private void signalJobStart() {

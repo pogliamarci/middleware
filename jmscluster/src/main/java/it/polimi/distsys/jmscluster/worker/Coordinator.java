@@ -22,6 +22,7 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 	private final ThreadLocal<TopicSession> session;
 	private final ThreadLocal<TopicPublisher> pub;
 	private int serverId;
+	private boolean isLeaving;
 	
 	public Coordinator(TopicConnection conn, 
 			Topic coord, int sid, JobsTracker tracker) throws JMSException {
@@ -29,6 +30,7 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 		this.serverId = sid;
 		this.connection = conn;
 		this.tracker = tracker;
+		isLeaving = false;
 
 		session = new ThreadLocal<TopicSession>() {
             @Override protected TopicSession initialValue() {
@@ -108,13 +110,25 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 	@Override
 	public void signalJobStart() {
 		tracker.addJob();
-		sendUpdate();
+		
+		if(!isLeaving)
+			sendUpdate();
 	}
 
 	@Override
 	public void signalJobEnd() {
 		tracker.removeJob();
-		sendUpdate();
+		
+		if(!isLeaving)
+			sendUpdate();
+		else
+			synchronized(this) {
+				this.notifyAll();
+		}
+	}
+	
+	public boolean queueIsEmpty() {
+		return tracker.getJobs() == 0;
 	}
 	
 	private void sendUpdate() {
@@ -135,6 +149,20 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 		msg.type = Type.JOIN;
 		msg.n = serverId;
 		msg.jobs = tracker.getJobs();
+		try {
+			pub.get().publish(session.get().createObjectMessage(msg));
+		} catch(JMSException e) {
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
+		}
+	}
+	
+	public void sendLeave() { //TODO ugly this should not be public, but for now it works :)
+		isLeaving = true;
+		CoordinationMessage msg = new CoordinationMessage();
+		msg.type = Type.LEAVE;
+		msg.n = serverId;
+		msg.jobs = 0;
 		try {
 			pub.get().publish(session.get().createObjectMessage(msg));
 		} catch(JMSException e) {
