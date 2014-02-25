@@ -125,12 +125,6 @@
 				<version>2.4</version>
 				<configuration>
 					<outputDirectory>${basedir}</outputDirectory>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
 					<archive>
 						<manifest>
 							<mainClass>it.polimi.distsys.hadoop.PowerOutliersJob</mainClass>

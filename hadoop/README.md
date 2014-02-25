@@ -49,3 +49,49 @@ instead of identifiers.
 * The code has to be demonstrated using at least two physical machines
   connected in a LAN (with or without additional virtual machines to emulate a
   larger cluster), with a replication value for HDFS of at least 2
+
+
+Setup instructions
+==================
+
+Requirements:
+* Java 7 or later
+* Apache Hadoop
+* Maven (to compile and package the sources)
+
+Setup:
+* Download and install the Hadoop release on each machine in the cluster. This
+  project has been tested with Apache Hadoop 2.2.0 under a Unix system. In
+  order to ease administration, it is advised to install Hadoop on the same
+  location in each machine of the cluster. From now on, this directory will be
+  called `$HADOOP_DIR`.
+* To ease administration, it is advised to create a common user on every
+  cluster node (e.g., the `hadoop` user). Notice that the user executing hadoop
+  should be able to write to the `$HADOOP_DIR/log`.
+* To run the control scripts, SSH needs to be set up on each machine to allow
+  password-less login (login with public-private keypair) from itself and any
+  other node in the cluster.
+
+Configuration:
+An example of configuration files is included in the conf/ directory. The
+provider configuration assumes two nodes, a master node called
+`hadoop-master.lan` and a single slave node called `hadoop-slave1.lan`.
+
+Run:
+...
+
+See Sivieri's readme. (TBC)
+
+Additional notes:
+* specify --conf <path to the conf directory> to each Hadoop command to use a
+local site configuration instead of the one stored in $HADOOP_DIR/etc.
+* there is no need to specify the main class, as it is already specified in the
+  jar's manifest.
+* ...
+To compile the project: `mvn package`. This command should generate a `hadoop-prj-0.1.jar` file containing the compiled Java classes.
+
+Single host: standalone mode
+============================
+export HADOOP_CLASSPATH=hadoop-prj-0.1.jar
+hadoop it.polimi.distsys.hadoop.PowerOutliersJob -fs file:/// data/data.csv output
+
