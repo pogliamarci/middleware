@@ -17,7 +17,7 @@ public class LocalAdmin {
 	
 	public void createJobsQueue(String host, int port)
 			throws AdminException, ConnectException, NamingException {
-		QueueConnectionFactory qcf = TcpConnectionFactory.create("localhost", 16010);
+		QueueConnectionFactory qcf = TcpConnectionFactory.create(host, port);
 		
 		AdminModule.connect(qcf, "root", "root");
 		
@@ -28,7 +28,7 @@ public class LocalAdmin {
 		jobsQueue.setFreeWriting();
 		
 		javax.naming.Context jndiCtx = new javax.naming.InitialContext();
-
+		
 		jndiCtx.bind("qcf", qcf);
 		jndiCtx.bind("jobsQueue", jobsQueue);
 		jndiCtx.close();
@@ -59,7 +59,22 @@ public class LocalAdmin {
 	
 	public static void main(String[] args) throws Exception {
 		LocalAdmin admin = new LocalAdmin();
-		admin.createJobsQueue("localhost", 16010);
-		admin.createCoordinationTopic("localhost", 16010);
+		
+		String host = args[1];
+		if(args.length != 2)
+			printUsage();
+		int port = 0;
+		try {
+			port = Integer.parseInt(args[2]);
+		} catch(NumberFormatException e) {
+			printUsage();
+		}
+		admin.createJobsQueue(host, port);
+		admin.createCoordinationTopic(host, port);
+	}
+	
+	private static void printUsage() {
+		System.out.println("Usage: java localAdmin host port");
+		System.exit(1);
 	}
 }
