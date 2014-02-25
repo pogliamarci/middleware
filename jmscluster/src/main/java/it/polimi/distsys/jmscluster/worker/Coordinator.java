@@ -170,5 +170,10 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
 		}
 	}
+
+	public synchronized void emptyQueue() throws InterruptedException {
+		while(!queueIsEmpty())
+			wait();
+	}
 	
 }

@@ -26,27 +26,20 @@ public class CommandLine extends Thread {
 			} catch (IOException e) { }
 		} while(!cmd.equals(new String("leave")));
 		
-		acceptor.stopListener();
+		acceptor.interrupt();
 		manager.sendLeave();
 		
 		System.out.println("Waiting for pending jobs completion...");
 		
 		try {
-			synchronized(acceptor) {
-				while(!acceptor.isOver())
-					acceptor.wait();
-			}
-			
-			synchronized(manager) {
-				while(!manager.queueIsEmpty())
-					manager.wait();
-			}
+			acceptor.join();
+			manager.emptyQueue();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		
 		System.out.println("Quitting.");
 		
-		System.exit(1);
+		System.exit(0);
 	}
 }

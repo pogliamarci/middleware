@@ -37,9 +37,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	private QueueConnection jobsConn;
 	private Queue jobsQueue;
 	private boolean isOk;
-	private boolean over;
-	private boolean isStopped;
-
+	private boolean pleaseStop = false;
 	private List<JobsSignalListener> lsts;
 	
 	private ExecutorService pool = Executors.newCachedThreadPool();
@@ -48,8 +46,6 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		jobsConn = jqc;
 		jobsQueue = q;
 		isOk = false;
-		over = false;
-		isStopped = false;
 		lsts = new ArrayList<JobsSignalListener>();
 	}
 	
@@ -69,25 +65,26 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
 			jobsConn.start();
-			while(!isStopped)
+			while(!shouldStop())
 			{
-				if(waitForAcceptanceCondition())
-				{
-					Message newJob = jobsRecv.receive(RECV_TIMEOUT);
-					
-					if(newJob != null)
-						onMessage(newJob);
+				try {
+					waitForAcceptanceCondition();
+				} catch(InterruptedException e) {
+					break;
 				}
+				Message newJob = jobsRecv.receive(RECV_TIMEOUT);
+				
+				if(newJob != null)
+					onMessage(newJob);
 			}
 		} catch(JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
 			l.log(Level.WARNING, "Error with JMS setup: " + e.getMessage());
 		}
-		
-		synchronized(this) {
-			over = true;
-			notifyAll();
-		}
+	}
+	
+	private boolean shouldStop() {
+		return interrupted() || pleaseStop;
 	}
 
 	@Override
@@ -100,28 +97,17 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		}
 	}
 	
-	public boolean isOver() {
-		return over;
+	@Override
+	public void interrupt() {
+		super.interrupt();
+		pleaseStop = true;
 	}
 	
-	public void stopListener() {
-		isStopped = true;
-		interrupt();
-	}
-	
-	private synchronized boolean waitForAcceptanceCondition()
+	private synchronized void waitForAcceptanceCondition() 
+			throws InterruptedException
 	{
 		while(!isOk)
-		{
-			try {
-				wait();
-			} catch(InterruptedException e) {
-				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, 
-						"JobsListener thread interrupted while waiting!");
-				return false;
-			}
-		}
-		return true;
+			wait();
 	}
 	
 	private void signalJobStart() {
@@ -149,7 +135,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 				Job job = (Job) msg.getObject();
 				Serializable ret = job.run();
 				QueueSession locSession = 
-						jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+					jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 				ObjectMessage reply = locSession.createObjectMessage();
 				reply.setJMSCorrelationID(msg.getJMSMessageID());
 				reply.setObject(ret);

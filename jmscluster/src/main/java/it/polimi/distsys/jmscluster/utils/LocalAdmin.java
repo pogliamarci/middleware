@@ -36,6 +36,7 @@ public class LocalAdmin {
 		AdminModule.disconnect();		
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void createCoordinationTopic(String host, int port)
 			throws AdminException, ConnectException, NamingException {
 		TopicConnectionFactory tcf = TcpConnectionFactory.create(host, port);
@@ -60,12 +61,12 @@ public class LocalAdmin {
 	public static void main(String[] args) throws Exception {
 		LocalAdmin admin = new LocalAdmin();
 		
-		String host = args[1];
+		String host = args[0];
 		if(args.length != 2)
 			printUsage();
 		int port = 0;
 		try {
-			port = Integer.parseInt(args[2]);
+			port = Integer.parseInt(args[1]);
 		} catch(NumberFormatException e) {
 			printUsage();
 		}
