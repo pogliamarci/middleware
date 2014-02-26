@@ -55,11 +55,13 @@ instead of identifiers.
 
 This project uses Apache Maven to compile and it has been tested with Maven 3.1.1 and Hadoop 2.2.0 under a Unix environment.
 Java SE 7 or later is also required.
+The pig version has been tested with Pig 0.12.0. Notice that, in order to work with Hadoop 2.x, pig could need to be recompiled
+with the `-Dhadoopversion=23` option. The relevant sources are already included in the pig binary distribution and can be compiled using `maven`.
 
 To compile the code and produce the JAR file, install Maven, put the `bin` directory in your `PATH` and execute
 
 ```
-mvn package
+$ mvn package
 ```
 
 This command will download all the necessary dependencies and produce the `hadoop-prj-0.1.jar` file.
@@ -75,6 +77,16 @@ $ java -jar data/data-generator.jar <number of seconds> > /tmp/dataset.csv
 $ hadoop jar hadoop-prj-0.1.jar -fs file:/// /tmp/dataset.csv output
 ```
 The `output` directory should not exist.
+
+### Pig
+
+The pig script is contained in the `script/` folder. To execute it, the `hadoop-prj-0.1.jar` file and the `dataset.csv` file (input file) need
+to be readable in the same directory where the script is being run, otherwise you need to change the paths in the `pig` script.
+
+For example, to run the script locally:
+```
+$ pig -x local script/outliers.pig
+```
 
 ### Cluster mode
 
