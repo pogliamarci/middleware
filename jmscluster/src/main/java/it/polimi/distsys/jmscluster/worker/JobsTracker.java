@@ -39,8 +39,7 @@ public class JobsTracker {
 	}
 	
 	public void join(int n, int jobs) {
-		if(!information.containsKey(n))
-		{
+		if(!information.containsKey(n)) {
 			// System.out.println(n + " joined with " + jobs + "jobs.");
 			information.put(n, new AtomicInteger(jobs));
 			informListeners();
@@ -55,7 +54,9 @@ public class JobsTracker {
 	public void update(int n, int cur) {
 		// System.out.println(n + " has " + cur + " jobs (I have " + ongoingJobs.get() + ")");
 		AtomicInteger ai = information.get(n);
-		if(ai != null) ai.set(cur);
+		if(ai != null) {
+			ai.set(cur);
+		}
 		informListeners();
 	}
 	
@@ -66,7 +67,9 @@ public class JobsTracker {
 	
 	public void addJob(int n) {
 		AtomicInteger ai = information.get(n);
-		if(ai != null) ai.getAndIncrement();
+		if(ai != null) {
+			ai.getAndIncrement();
+		}
 		informListeners();
 	}
 	
@@ -77,7 +80,9 @@ public class JobsTracker {
 	
 	public void removeJob(int n) {
 		AtomicInteger ai = information.get(n);
-		if(ai != null) ai.decrementAndGet();
+		if(ai != null) {
+			ai.decrementAndGet();
+		}
 		informListeners();
 	}
 	
@@ -88,8 +93,7 @@ public class JobsTracker {
 	
 	private void informListeners() {
 		boolean st = canAccept();
-		for(ServerStatusListener lst : lsts)
-		{
+		for(ServerStatusListener lst : lsts) {
 			lst.canAccept(st);
 		}
 		
@@ -100,7 +104,9 @@ public class JobsTracker {
 		
 		for(AtomicInteger ai : information.values()) {
 			int cur = ai.get();
-			if (myJobs > cur) return false;
+			if (myJobs > cur) {
+				return false;
+			}
 		}
 		return true;
 	}

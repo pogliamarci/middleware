@@ -7,5 +7,9 @@ public class ConnectionException extends Exception {
 	public ConnectionException(String string) {
 		super(string);
 	}
+
+	public ConnectionException(String string, Exception e) {
+		super(string, e);
+	}
 	
 }

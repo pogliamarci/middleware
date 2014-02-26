@@ -65,8 +65,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
 			jobsConn.start();
-			while(!shouldStop())
-			{
+			while(!shouldStop()) {
 				try {
 					waitForAcceptanceCondition();
 				} catch(InterruptedException e) {
@@ -74,8 +73,9 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 				}
 				Message newJob = jobsRecv.receive(RECV_TIMEOUT);
 				
-				if(newJob != null)
+				if(newJob != null) {
 					onMessage(newJob);
+				}
 			}
 		} catch(JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
@@ -89,11 +89,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 
 	@Override
 	public void onMessage(Message receive) {
-		if(receive instanceof ObjectMessage)
-		{
+		if(receive instanceof ObjectMessage) {
 			ObjectMessage msg = (ObjectMessage) receive;
 			signalJobStart();
-			pool.execute(new JobExecutor(msg, jobsConn));
+			pool.execute(new JobExecutor(msg));
 		}
 	}
 	
@@ -104,10 +103,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	}
 	
 	private synchronized void waitForAcceptanceCondition() 
-			throws InterruptedException
-	{
-		while(!isOk)
+			throws InterruptedException {
+		while(!isOk) {
 			wait();
+		}
 	}
 	
 	private void signalJobStart() {
@@ -125,7 +124,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	private class JobExecutor implements Runnable {
 		private ObjectMessage msg;
 		
-		JobExecutor(ObjectMessage msg, QueueConnection conn) {
+		JobExecutor(ObjectMessage msg) {
 			this.msg = msg;
 		}
 		

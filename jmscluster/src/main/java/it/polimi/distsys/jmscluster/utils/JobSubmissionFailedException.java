@@ -6,12 +6,12 @@ public class JobSubmissionFailedException extends Exception {
 		super(e);
 	}
 
-	public JobSubmissionFailedException() {
-		// TODO Auto-generated constructor stub
-	}
-
 	public JobSubmissionFailedException(String string) {
 		super(string);
+	}
+
+	public JobSubmissionFailedException(String string, Exception e) {
+		super(string, e);
 	}
 
 	private static final long serialVersionUID = -7250727137847153588L;

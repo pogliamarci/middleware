@@ -17,16 +17,22 @@ import org.objectweb.joram.client.jms.tcp.TcpConnectionFactory;
 
 public class LocalAdmin {
 	
+	private static final String ADMIN_USER = "root";
+	private static final String ADMIN_PASS = "root";
+	private static final String USERNAME = "anonymous";
+	private static final String PASSWORD = "anonymous";
+	
+	
 	public void createJobsQueue(String host, int port, InitialContext jndiCtx)
 			throws AdminException, ConnectException, NamingException {
 		try {
-			AdminModule.connect(host, port, "root", "root");
+			AdminModule.connect(host, port, ADMIN_USER, ADMIN_PASS);
 		} catch (UnknownHostException e) {
 			System.err.println("Unknown host. Can't connect to " + host + ":" + port);
 		}
 
 		QueueConnectionFactory qcf = TcpConnectionFactory.create(host, port);
-		User.create("anonymous", "anonymous");
+		User.create(USERNAME, PASSWORD);
 
 		Queue jobsQueue = Queue.create("jobsQueue");
 		jobsQueue.setFreeReading();
@@ -41,14 +47,14 @@ public class LocalAdmin {
 	public void createCoordinationTopic(String host, int port, InitialContext jndiCtx)
 			throws AdminException, ConnectException, NamingException {
 		try {
-			AdminModule.connect(host, port, "root", "root");
+			AdminModule.connect(host, port, ADMIN_USER, ADMIN_PASS);
 		} catch (UnknownHostException e) {
 			System.err.println("Unknown host. Can't connect to " + host + ":" + port);
 		}
 		
 		TopicConnectionFactory tcf = TcpConnectionFactory.create(host, port);
 		
-		User.create("anonymous", "anonymous");
+		User.create(USERNAME, PASSWORD);
 
 		Topic coordinationTopic = Topic.create("coordinationTopic");
 		coordinationTopic.setFreeReading();
@@ -60,11 +66,12 @@ public class LocalAdmin {
 		AdminModule.disconnect();
 	}
 	
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		LocalAdmin admin = new LocalAdmin();
 		
-		if(args.length < 2)
+		if(args.length < 2) {
 			printUsage();
+		}
 		
 		String host = args[0];
 		int port = 0;
@@ -74,19 +81,23 @@ public class LocalAdmin {
 			printUsage();
 		}
 		
-		InitialContext ictx;
-		if(args.length == 4)
-		{
-			String jndiHost = args[2];
-			int jndiPort = Integer.parseInt(args[3]);
-			ictx = InitialContextFactory.generate(jndiHost, jndiPort);
-		} else {
-			ictx = InitialContextFactory.generate();
+		try {
+			InitialContext ictx;
+			if(args.length == 4)
+			{
+				String jndiHost = args[2];
+				int jndiPort = Integer.parseInt(args[3]);
+				ictx = InitialContextFactory.generate(jndiHost, jndiPort);
+			} else {
+				ictx = InitialContextFactory.generate();
+			}
+			admin.createJobsQueue(host, port, ictx);
+			admin.createCoordinationTopic(host, port, ictx);
+			ictx.close();
+		} catch (ConnectException | AdminException | NamingException e) {
+			e.printStackTrace();
 		}
 		
-		admin.createJobsQueue(host, port, ictx);
-		admin.createCoordinationTopic(host, port, ictx);
-		ictx.close();
 	}
 	
 	private static void printUsage() {

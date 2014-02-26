@@ -29,7 +29,6 @@ public class ClusterClient {
 	private boolean connected;
 	private QueueConnection conn;
 	private QueueSession session;
-	private Queue jobsQueue;
 	private Queue tempQueue;
 	private MessageProducer jobQueuePublisher;
 	private ReplyProcesser listener;
@@ -41,15 +40,17 @@ public class ClusterClient {
 	}
 	
 	public void connect() throws ConnectionException {
-		if(connected)
+		if(connected) {
 			return;
+		}
 		QueueConnectionFactory qcf;
+		Queue jobsQueue;
 		try {
 			qcf = (QueueConnectionFactory) ictx.lookup("qcf");
 			jobsQueue = (Queue) ictx.lookup("jobsQueue");
 			ictx.close();
 		} catch (NamingException e) {
-				throw new ConnectionException("can't look up items (naming error)");
+				throw new ConnectionException("can't look up items (naming error)", e);
 		}
 		try {
 			conn = qcf.createQueueConnection();
@@ -60,15 +61,16 @@ public class ClusterClient {
 			jobQueuePublisher = session.createSender(jobsQueue);
 			conn.start();
 		}  catch (JMSException e) {
-			throw new ConnectionException("can't create connection");
+			throw new ConnectionException("can't create connection", e);
 		}
 		connected = true;
 	}
 	
 	public Serializable submitJob(Job j) 
 			throws JobSubmissionFailedException, InterruptedException {
-		if(!connected)
-			throw new JobSubmissionFailedException("Client is not connected");	
+		if(!connected) {
+			throw new JobSubmissionFailedException("Client is not connected");
+		}
 		String cid = postJob(j);
 		listener.jobPosted(cid);
 		return listener.get(cid);
@@ -76,8 +78,9 @@ public class ClusterClient {
 	
 	public Future<Serializable> submitJobAsync(Job j) 
 			throws JobSubmissionFailedException {
-		if(!connected)
+		if(!connected) {
 			throw new JobSubmissionFailedException("Client is not connected");
+		}
 
 		String corrId = postJob(j);
 		listener.jobPosted(corrId);
@@ -95,7 +98,7 @@ public class ClusterClient {
 			listener.disconnect();
 			conn.stop();
 		} catch (JMSException e) {
-			throw new ConnectionException("can't stop connection");
+			throw new ConnectionException("can't stop connection", e);
 		}
 	}
 	
@@ -107,7 +110,7 @@ public class ClusterClient {
 			jobQueuePublisher.send(msg);
 			return msg.getJMSMessageID();
 		} catch (JMSException e) {
-			throw new JobSubmissionFailedException(e);
+			throw new JobSubmissionFailedException("can't post job", e);
 		}	
 	}
 

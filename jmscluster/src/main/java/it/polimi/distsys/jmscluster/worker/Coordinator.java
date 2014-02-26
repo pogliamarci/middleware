@@ -60,46 +60,40 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 
 	@Override
 	public void onMessage(Message message) {
-		if(message instanceof ObjectMessage) {
+		try {
 			ObjectMessage om = (ObjectMessage) message;
-			try {
-				Object o = om.getObject();
-				if(o instanceof CoordinationMessage) {
-					onMessage((CoordinationMessage) o);
-				} else {
-					Logger l = Logger.getLogger(this.getClass().getName());
-					l.log(Level.WARNING, "Received unknown message on the coordination topic");
-				}
-			} catch(JMSException e) {
-				Logger l = Logger.getLogger(this.getClass().getName());
-				l.log(Level.WARNING, "Error receiving message: " + e.getMessage());
-			}
-		} else {
+			CoordinationMessage content = (CoordinationMessage) om.getObject();
+			onMessage(content);
+		} catch(ClassCastException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
 			l.log(Level.WARNING, "Received unknown message on the coordination topic");
+		} catch(JMSException e) {
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Error receiving message: " + e.getMessage());
 		}
 	}
 	
 	private void onMessage(CoordinationMessage cm)
 	{
 		/* drop messages sent by the process itself */
-		if(cm.n == serverId)
+		if(cm.getN() == serverId)
 		{
 			return;
 		}
-		switch(cm.type) {
+		switch(cm.getType()) {
 		case UPDATE:
-			tracker.update(cm.n, cm.jobs);
+			tracker.update(cm.getN(), cm.getJobs());
 			break;
 		case JOIN:
-			if(!tracker.exists(cm.n))
+			if(!tracker.exists(cm.getN()))
 			{
-				sendJoin(); // inform the existing processes of my existence...
+				/* inform the existing processes of my existence... */
+				sendJoin();
 			}
-			tracker.join(cm.n, cm.jobs);
+			tracker.join(cm.getN(), cm.getJobs());
 			break;
 		case LEAVE:
-			tracker.leave(cm.n);
+			tracker.leave(cm.getN());
 			break;
 		default:
 			Logger l = Logger.getLogger(this.getClass().getName());
@@ -111,65 +105,59 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 	public void signalJobStart() {
 		tracker.addJob();
 		
-		if(!isLeaving)
+		if(!isLeaving) {
 			sendUpdate();
+		}
 	}
 
 	@Override
 	public void signalJobEnd() {
 		tracker.removeJob();
 		
-		if(!isLeaving)
+		if(!isLeaving) {
 			sendUpdate();
-		else
+		} else {
 			synchronized(this) {
 				this.notifyAll();
 			}
+		}
+	}
+	
+	public synchronized void emptyQueue() throws InterruptedException {
+		while(tracker.getJobs() != 0) {
+			wait();
+		}
+	}
+	
+	public void shutdown() {
+		isLeaving = true;
+		sendLeave();
 	}
 	
 	private void sendUpdate() {
-		CoordinationMessage msg = new CoordinationMessage();
-		msg.type = Type.UPDATE;
-		msg.n = serverId;
-		msg.jobs = tracker.getJobs();
-		try {
-			pub.get().publish(session.get().createObjectMessage(msg));
-		} catch(JMSException e) {
-			Logger l = Logger.getLogger(this.getClass().getName());
-			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
-		}
+		CoordinationMessage msg = new CoordinationMessage(Type.UPDATE, serverId, tracker.getJobs());
+		send(msg);
 	}
 	
-	public void sendJoin() { //TODO ugly this should not be public, but for now it works :)
-		CoordinationMessage msg = new CoordinationMessage();
-		msg.type = Type.JOIN;
-		msg.n = serverId;
-		msg.jobs = tracker.getJobs();
-		try {
-			pub.get().publish(session.get().createObjectMessage(msg));
-		} catch(JMSException e) {
-			Logger l = Logger.getLogger(this.getClass().getName());
-			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
-		}
+	public void sendJoin() {
+		CoordinationMessage msg = 
+				new CoordinationMessage(Type.JOIN, serverId, tracker.getJobs());
+		send(msg);
 	}
 	
-	public void sendLeave() { //TODO ugly this should not be public, but for now it works :)
-		isLeaving = true;
-		CoordinationMessage msg = new CoordinationMessage();
-		msg.type = Type.LEAVE;
-		msg.n = serverId;
-		msg.jobs = 0;
+	private void sendLeave() {
+		CoordinationMessage msg = 
+				new CoordinationMessage(Type.LEAVE, serverId, 0);
+		send(msg);
+	}
+	
+	private void send(CoordinationMessage m) {
 		try {
-			pub.get().publish(session.get().createObjectMessage(msg));
+			pub.get().publish(session.get().createObjectMessage(m));
 		} catch(JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
 			l.log(Level.WARNING, "Error publishing message: " + e.getMessage());
 		}
-	}
-
-	public synchronized void emptyQueue() throws InterruptedException {
-		while(tracker.getJobs() != 0)
-			wait();
 	}
 	
 }

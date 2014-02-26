@@ -18,12 +18,7 @@ import javax.naming.NamingException;
 
 public class Server {
 
-	private int serverId;
-	private QueueConnection queueConn;
-	private TopicSession topicSession;
-	private TopicConnection topicConn;
-	private Coordinator manager;
-	private JobsListener acceptor;
+	private int serverId;	
 	
 	public Server(int id) {
 		serverId = id;
@@ -37,21 +32,22 @@ public class Server {
 			Topic coordinationTopic = (Topic) ictx.lookup("coordinationTopic");
 			ictx.close();
 
-			queueConn = qcf.createQueueConnection();
+			QueueConnection queueConn = qcf.createQueueConnection();
 			
-			topicConn = tcf.createTopicConnection();
+			TopicConnection topicConn = tcf.createTopicConnection();
 			
 			JobsTracker tracker = new JobsTracker();
-			manager =  new Coordinator(topicConn, coordinationTopic, serverId, tracker);
+			Coordinator manager =  new Coordinator(topicConn, coordinationTopic, serverId, tracker);
 			
-			topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+			TopicSession topicSession = topicConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 			TopicSubscriber subs = topicSession.createSubscriber(coordinationTopic);
 			topicConn.start();
 			subs.setMessageListener(manager);
 			
-			manager.sendJoin(); // join after the listener is subscribed...
+			// join ONLY after the listener is subscribed
+			manager.sendJoin();
 			
-			acceptor = new JobsListener(queueConn, jobsQueue);
+			JobsListener acceptor = new JobsListener(queueConn, jobsQueue);
 			CommandLine cmd = new CommandLine(manager, acceptor);
 			
 			acceptor.addListener(manager);
@@ -62,9 +58,9 @@ public class Server {
 			cmd.start();
 
 		} catch (NamingException e) {
-			throw new ConnectionException("can't look up items (naming error)");
+			throw new ConnectionException("can't look up items (naming error)", e);
 		} catch (JMSException e) {
-			throw new ConnectionException("can't create connection");
+			throw new ConnectionException("can't create connection", e);
 		}
 	}
 	

@@ -4,13 +4,47 @@ import java.io.Serializable;
 
 public class CoordinationMessage implements Serializable {
 
-	private static final long serialVersionUID = 5671750865047787526L;
+	private static final long serialVersionUID = -3397173605723850254L;
 
 	enum Type {
 		UPDATE, JOIN, LEAVE
 	}
 	
-	public Type type;
-	public int n;
-	public int jobs;
+	private Type type;
+	private int n;
+	private int jobs;
+	
+	public CoordinationMessage(Type type) {
+		this.type = type;
+	}
+	
+	public CoordinationMessage(Type type, int n, int jobs) {
+		this.type = type;
+		this.n = n;
+		this.jobs = jobs;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	public void setType(Type type) {
+		this.type = type;
+	}
+
+	public int getN() {
+		return n;
+	}
+
+	public void setN(int n) {
+		this.n = n;
+	}
+
+	public int getJobs() {
+		return jobs;
+	}
+
+	public void setJobs(int jobs) {
+		this.jobs = jobs;
+	}
 }

@@ -3,6 +3,8 @@ package it.polimi.distsys.jmscluster.worker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CommandLine extends Thread {
 	
@@ -23,11 +25,14 @@ public class CommandLine extends Thread {
 		do {
 			try {
 				cmd = br.readLine();
-			} catch (IOException e) { }
-		} while(!cmd.equals(new String("leave")));
+			} catch (IOException e) {
+				Logger l = Logger.getLogger(this.getClass().getName());
+				l.log(Level.WARNING, "Exception reading line: " + e.getMessage());
+			}
+		} while(!cmd.equals("leave"));
 		
 		acceptor.interrupt();
-		manager.sendLeave();
+		manager.shutdown();
 		
 		System.out.println("Waiting for pending jobs completion...");
 		
@@ -35,10 +40,9 @@ public class CommandLine extends Thread {
 			acceptor.join();
 			manager.emptyQueue();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Thread interrupted during shutdown: " + e.getMessage());
 		}
-		
-		System.out.println("Quitting.");
 		
 		System.exit(0);
 	}

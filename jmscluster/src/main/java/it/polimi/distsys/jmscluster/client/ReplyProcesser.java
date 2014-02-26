@@ -21,7 +21,7 @@ import javax.jms.Session;
 
 public class ReplyProcesser {
 
-	private final static Logger LOGGER = Logger.getLogger(ReplyProcesser.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(ReplyProcesser.class.getName());
 	
 	private Map<String, Serializable> results;
 	private Set<String> outstandingReplies;
@@ -44,22 +44,26 @@ public class ReplyProcesser {
 
 	public synchronized Serializable get(String corrId)
 			throws InterruptedException {
-		while(!results.containsKey(corrId))
+		while(!results.containsKey(corrId)) {
 			wait();
+		}
 		return getAndRemove(corrId);
 	}
 
 	public synchronized Serializable get(String corrId, long millis) 
 			throws InterruptedException, TimeoutException {
 		long initial = System.currentTimeMillis();
-		if(millis == 0)
+		if(millis == 0) {
 			return get(corrId);
+		}
 		while(!results.containsKey(corrId))
 		{
 			long now = System.currentTimeMillis();
-			if(now < initial || (now - initial) >= millis)
+			if(now < initial || (now - initial) >= millis) {
 				wait(millis - (now - initial));
-			else throw new TimeoutException();
+			} else {
+				throw new TimeoutException();
+			}
 		}
 		return getAndRemove(corrId);
 	}
@@ -69,8 +73,9 @@ public class ReplyProcesser {
 	}
 	
 	public void disconnect() throws JMSException {
-		if(session != null)
+		if(session != null) {
 			session.close();
+		}
 		if(recv != null)
 		{
 			recv.close();
@@ -83,16 +88,19 @@ public class ReplyProcesser {
 
 	public synchronized void waitForOutstandingReplies() 
 			throws InterruptedException {
-		while(!outstandingReplies.isEmpty())
+		while(!outstandingReplies.isEmpty()) {
 			wait();
+		}
 	}
 
 	// In order not to waste resource, if the future is cancelled 
 	// we make sure to discard the result of the call...
 	public synchronized void markAsCancelled(String corrId) {
-		if(results.containsKey(corrId))
+		if(results.containsKey(corrId)) {
 			results.remove(corrId);
-		else toBeDiscarded.add(corrId);
+		} else {
+			toBeDiscarded.add(corrId);
+		}
 	}
 	
 	private synchronized void onMessage(ObjectMessage msg) {
@@ -120,8 +128,9 @@ public class ReplyProcesser {
 	private class ReplyMessageListener implements MessageListener {
 		@Override
 		public void onMessage(Message msg) {
-			if (!(msg instanceof ObjectMessage))
+			if (!(msg instanceof ObjectMessage)) {
 				return;
+			}
 			ReplyProcesser.this.onMessage((ObjectMessage) msg);
 		}
 	}

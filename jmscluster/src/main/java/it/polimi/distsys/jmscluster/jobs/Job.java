@@ -4,6 +4,6 @@ import java.io.Serializable;
 
 public interface Job extends Serializable {
 
-	public Serializable run();
+	Serializable run();
 
 }

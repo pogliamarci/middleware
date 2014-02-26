@@ -5,17 +5,17 @@ import java.util.Hashtable;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-public class InitialContextFactory {
+public final class InitialContextFactory {
 	
-	private static String DEFAULT_JNDI_HOST = "localhost";
-	private static int DEFAULT_JNDI_PORT = 16400;
+	private static final String DEFAULTHOST = "localhost";
+	private static final int DEFAULTPORT = 16400;
 	
 	private InitialContextFactory() {
 		
 	}
 	
 	public static InitialContext generate() throws NamingException {
-		return generate(DEFAULT_JNDI_HOST, DEFAULT_JNDI_PORT);
+		return generate(DEFAULTHOST, DEFAULTPORT);
 	}
 	
 	public static InitialContext generate(String host, int port) throws NamingException {
