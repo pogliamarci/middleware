@@ -33,9 +33,11 @@ public class ClusterClient {
 	private Queue tempQueue;
 	private MessageProducer jobQueuePublisher;
 	private ReplyProcesser listener;
+	private InitialContext ictx;
 	
-	public ClusterClient() {
+	public ClusterClient(InitialContext ictx) {
 		connected = false;
+		this.ictx = ictx;
 	}
 	
 	public void connect() throws ConnectionException {
@@ -43,7 +45,6 @@ public class ClusterClient {
 			return;
 		QueueConnectionFactory qcf;
 		try {
-			InitialContext ictx = new InitialContext();
 			qcf = (QueueConnectionFactory) ictx.lookup("qcf");
 			jobsQueue = (Queue) ictx.lookup("jobsQueue");
 			ictx.close();
