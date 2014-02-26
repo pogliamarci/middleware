@@ -4,13 +4,23 @@ JARFILE=jmscluster-1.0.jar
 
 host=localhost
 port=16010
+jndiHost=localhost
+jndiPort=16400
 
 if [ "$1" != "" ]; then
 	host=$1
 fi
 
-if [ "$1" != "" ]; then
-	host=$1
+if [ "$2" != "" ]; then
+	port=$2
+fi
+
+if [ "$3" != "" ]; then
+    jndiHost=$3
+fi
+
+if [ "$4" != "" ]; then
+    jndiPort=$4
 fi
 
 # Verify if JORAM_HOME is well defined
@@ -20,4 +30,4 @@ if [ ! -r "$JORAM_HOME"/samples/bin/clean.sh ]; then
   exit 1
 fi
 
-exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.utils.LocalAdmin $host $port
+exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.utils.LocalAdmin $host $port $jndiHost $jndiPort

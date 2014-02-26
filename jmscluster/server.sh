@@ -11,4 +11,4 @@ if [ ! -r "$JORAM_HOME"/samples/bin/clean.sh ]; then
   exit 1
 fi
 
-exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.worker.Server $1
+exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.worker.Server $1 $2 $3

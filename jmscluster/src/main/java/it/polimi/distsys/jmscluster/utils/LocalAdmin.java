@@ -2,7 +2,6 @@ package it.polimi.distsys.jmscluster.utils;
 
 import java.net.ConnectException;
 import java.net.UnknownHostException;
-import java.util.Hashtable;
 
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnectionFactory;
@@ -17,9 +16,6 @@ import org.objectweb.joram.client.jms.admin.User;
 import org.objectweb.joram.client.jms.tcp.TcpConnectionFactory;
 
 public class LocalAdmin {
-	
-	private static String DEFAULT_JNDI_HOST = "localhost";
-	private static int DEFAULT_JNDI_PORT = 16400;
 	
 	public void createJobsQueue(String host, int port, InitialContext jndiCtx)
 			throws AdminException, ConnectException, NamingException {
@@ -38,7 +34,6 @@ public class LocalAdmin {
 
 		jndiCtx.bind("qcf", qcf);
 		jndiCtx.bind("jobsQueue", jobsQueue);
-		jndiCtx.close();
 
 		AdminModule.disconnect();		
 	}
@@ -61,7 +56,6 @@ public class LocalAdmin {
 
 		jndiCtx.bind("tcf", tcf);
 		jndiCtx.bind("coordinationTopic", coordinationTopic);
-		jndiCtx.close();
 
 		AdminModule.disconnect();
 	}
@@ -79,28 +73,20 @@ public class LocalAdmin {
 		} catch(NumberFormatException e) {
 			printUsage();
 		}
-		String jndiHost = DEFAULT_JNDI_HOST;
-		String jndiPort = Integer.toString(DEFAULT_JNDI_PORT);
+		
+		InitialContext ictx;
 		if(args.length == 4)
 		{
-			jndiHost = args[2];
-			jndiPort = args[3];
-		}
-		
-		Hashtable<String, Object> env = new Hashtable<String, Object>();
-		env.put("java.naming.factory.host", jndiHost);
-		env.put("java.naming.factory.port", jndiPort);
-		
-		InitialContext ictx = null;
-		try {
-			ictx = new InitialContext(env);
-		} catch (NamingException e) {
-			System.err.println("Can't create JNDI connection to " + host + ":" + port);
-			System.exit(1);
+			String jndiHost = args[2];
+			int jndiPort = Integer.parseInt(args[3]);
+			ictx = InitialContextFactory.generate(jndiHost, jndiPort);
+		} else {
+			ictx = InitialContextFactory.generate();
 		}
 		
 		admin.createJobsQueue(host, port, ictx);
 		admin.createCoordinationTopic(host, port, ictx);
+		ictx.close();
 	}
 	
 	private static void printUsage() {

@@ -1,8 +1,7 @@
 package it.polimi.distsys.jmscluster.worker;
 
-import java.util.Hashtable;
-
 import it.polimi.distsys.jmscluster.utils.ConnectionException;
+import it.polimi.distsys.jmscluster.utils.InitialContextFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
@@ -25,9 +24,6 @@ public class Server {
 	private TopicConnection topicConn;
 	private Coordinator manager;
 	private JobsListener acceptor;
-	
-	private static String DEFAULT_JNDI_HOST = "localhost";
-	private static int DEFAULT_JNDI_PORT = 16400;
 	
 	public Server(int id) {
 		serverId = id;
@@ -78,28 +74,23 @@ public class Server {
 			System.exit(1);
 		}
 		
-		String host = DEFAULT_JNDI_HOST;
-		String port = Integer.toString(DEFAULT_JNDI_PORT);
-		
-		if(args.length == 3)
-		{
-			host = args[1];
-			port = args[2];
-		}
-		
-		Hashtable<String, Object> env = new Hashtable<String, Object>();
-		env.put("java.naming.factory.host", host);
-		env.put("java.naming.factory.port", port);
 		try {
-			InitialContext ictx = new InitialContext(env);
+			InitialContext ictx;
+			if (args.length == 3) {
+				String host = args[1];
+				int port = Integer.parseInt(args[2]);
+				ictx = InitialContextFactory.generate(host, port);
+			} else {
+				ictx = InitialContextFactory.generate();
+			}
 			Server svr = new Server(Integer.parseInt(args[0]));
 			svr.go(ictx);
+			System.out.println("Server started. Type 'leave' to complete the running jobs and shut down the server.");
 		} catch (NamingException e) {
-			e.printStackTrace();
-			System.err.println("Can't create JNDI connection to " + host + ":" + port);
+			System.err.println("Can't create JNDI connection");
+			System.exit(1);
 		} catch (ConnectionException e) {
 			System.err.println("Connection error: " + e.getMessage() + ".");
-			System.err.println("Quitting.");
 			System.exit(1);
 		}
 	}

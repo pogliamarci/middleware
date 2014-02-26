@@ -1,7 +1,6 @@
 package it.polimi.distsys.jmscluster.client;
 
 import java.io.Serializable;
-import java.util.Hashtable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -11,32 +10,27 @@ import javax.naming.NamingException;
 import it.polimi.distsys.jmscluster.jobs.HelloWorldJob;
 import it.polimi.distsys.jmscluster.jobs.PauseJob;
 import it.polimi.distsys.jmscluster.utils.ConnectionException;
+import it.polimi.distsys.jmscluster.utils.InitialContextFactory;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 public class Client {
 	
-	private static String DEFAULT_JNDI_HOST = "localhost";
-	private static int DEFAULT_JNDI_PORT = 16400;
-
 	public static void main(String[] args) {
-		String host = DEFAULT_JNDI_HOST;
-		String port = Integer.toString(DEFAULT_JNDI_PORT);
-		
-		if(args.length == 2) {
-			host = args[0];
-			port = args[1];
-		}
-		
-		Hashtable<String, Object> env = new Hashtable<String, Object>();
-		env.put("java.naming.factory.host", host);
-		env.put("java.naming.factory.port", port);
-		
-		InitialContext ictx = null;
+
+		InitialContext ictx;
 		try {
-			ictx = new InitialContext(env);
+			
+			if (args.length == 2) {
+				String host = args[0];
+				int port = Integer.parseInt(args[1]);
+				ictx = InitialContextFactory.generate(host, port);
+			} else {
+				ictx = InitialContextFactory.generate();
+			}
 		} catch (NamingException e) {
-			System.err.println("Can't create JNDI connection to " + host + ":" + port);
+			System.err.println("Can't create JNDI connection");
 			System.exit(1);
+			return;
 		}
 		
 		ClusterClient client = new ClusterClient(ictx);
