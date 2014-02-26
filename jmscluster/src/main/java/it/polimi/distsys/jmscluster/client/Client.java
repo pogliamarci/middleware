@@ -1,8 +1,12 @@
 package it.polimi.distsys.jmscluster.client;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -10,13 +14,17 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import it.polimi.distsys.jmscluster.jobs.HelloWorldJob;
+import it.polimi.distsys.jmscluster.jobs.McmJob;
 import it.polimi.distsys.jmscluster.jobs.PauseJob;
+import it.polimi.distsys.jmscluster.jobs.PrimeJob;
 import it.polimi.distsys.jmscluster.utils.ConnectionException;
 import it.polimi.distsys.jmscluster.utils.InitialContextFactory;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 public final class Client {
 	
+	static final long JOB_WAITING_TIME = 300;
+
 	private Client() {
 		
 	}
@@ -40,18 +48,28 @@ public final class Client {
 		}
 		
 		ClusterClient client = new ClusterClient(ictx);
-		Serializable ret;
 		
 		try {
 			client.connect();
-			Future<Serializable> r1 = client.submitJobAsync(new HelloWorldJob("JOB 1!"));
-			Future<Serializable> r2 = client.submitJobAsync(new PauseJob("JOB 2"));
-			Future<Serializable> r3 = client.submitJobAsync(new PauseJob("JOB 3"));
-			ret = (String) client.submitJob(new HelloWorldJob("JOB 4"));
-			System.out.println(ret);
-			System.out.println(r1.get());
-			System.out.println(r2.get());
-			System.out.println(r3.get());
+			List<Future<Serializable>> results = new ArrayList<Future<Serializable>>();
+			
+			results.add(client.submitJobAsync(new HelloWorldJob("JOB 1")));
+			results.add(client.submitJobAsync(new McmJob("JOB 2", 253620135, 540465346)));
+			results.add(client.submitJobAsync(new PauseJob("JOB 3", 5000)));
+			results.add(client.submitJobAsync(new PrimeJob("JOB 4", 17920157)));
+			results.add(client.submitJobAsync(new PauseJob("JOB 5", 5000)));
+			results.add(client.submitJobAsync(new HelloWorldJob("JOB 6")));
+			
+			while(!results.isEmpty()) {
+				for(int i = 0; i < results.size(); i++)
+					try {
+						Serializable out = results.get(i).get(JOB_WAITING_TIME, TimeUnit.MILLISECONDS);
+						System.out.println(out);
+						results.remove(i);
+					}
+					catch(TimeoutException e) { }
+			}
+			
 			client.disconnect();
 			System.exit(0);
 		} catch (JobSubmissionFailedException | ConnectionException
