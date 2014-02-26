@@ -61,10 +61,12 @@ public class LocalAdmin {
 	public static void main(String[] args) throws Exception {
 		LocalAdmin admin = new LocalAdmin();
 		
-		String host = args[0];
 		if(args.length != 2)
 			printUsage();
+		
+		String host = args[0];
 		int port = 0;
+		
 		try {
 			port = Integer.parseInt(args[1]);
 		} catch(NumberFormatException e) {
