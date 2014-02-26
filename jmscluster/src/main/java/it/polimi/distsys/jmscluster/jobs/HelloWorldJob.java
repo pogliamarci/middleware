@@ -13,8 +13,10 @@ public class HelloWorldJob implements Job {
 	
 	@Override
 	public Serializable run() {
-		System.out.println(str);
-		return str;
+		System.out.println(str + "begin");
+		
+		System.out.println(str + "end");
+		return str+" says Hello World!";
 	}
 
 }
