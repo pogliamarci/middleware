@@ -127,10 +127,6 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 			}
 	}
 	
-	public boolean queueIsEmpty() {
-		return tracker.getJobs() == 0;
-	}
-	
 	private void sendUpdate() {
 		CoordinationMessage msg = new CoordinationMessage();
 		msg.type = Type.UPDATE;
@@ -172,7 +168,7 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 	}
 
 	public synchronized void emptyQueue() throws InterruptedException {
-		while(!queueIsEmpty())
+		while(tracker.getJobs() != 0)
 			wait();
 	}
 	
