@@ -36,7 +36,5 @@ cluster).
 If you are experiencing problems, check that the machines in the cluster are
 not firewalled.
 
-Furthermore, it is advised that each machine run the same version of openMPI
-and that it is installed in the same folder on each machine.
-The code has been tested under GNU/Linux (Debian Wheezy and ArchLinux) and 
+Each machine must run the same version of OpenMPI, and the OpenMPI executables should be installed in the same folder on each machine. The project has been tested under GNU/Linux (Debian Wheezy and ArchLinux) and 
 Mac OSX, using OpenMPI 1.6.4 compiled from sources.
