@@ -81,6 +81,7 @@ public class ReplyProcesser {
 		}
 		if(recv != null)
 		{
+			recv.setMessageListener(null);
 			recv.close();
 		}
 	}

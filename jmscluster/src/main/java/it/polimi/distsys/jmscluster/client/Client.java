@@ -66,18 +66,20 @@ public final class Client {
 				while(it.hasNext()) {
 					try {
 						Serializable out = it.next().get(JOB_WAITING_TIME, TimeUnit.MILLISECONDS);
+						it.remove();
 						System.out.println(out);
+					} catch(ExecutionException e) {
+						System.out.println("A job failed to run: " + e.getMessage());
 						it.remove();
 					} catch(TimeoutException e) {
 						//nothing to do..
 					}
 				}
 			}
-	
+
 			client.disconnect();
-			System.exit(0);
-		} catch (JobSubmissionFailedException | ConnectionException
-				| InterruptedException | ExecutionException e) {
+		} catch (JobSubmissionFailedException | InterruptedException |
+				ConnectionException e) {
 			Logger l = Logger.getLogger(Client.class.getName());
 			l.log(Level.WARNING, "Error running the client: " + e.getMessage());
 			System.exit(1);

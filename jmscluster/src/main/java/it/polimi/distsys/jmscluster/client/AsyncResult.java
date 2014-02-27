@@ -28,13 +28,21 @@ public class AsyncResult implements Future<Serializable> {
 	@Override
 	public Serializable get() 
 			throws InterruptedException, ExecutionException {
-		return listener.get(corrId);
+		Serializable obj = listener.get(corrId);
+		if(obj instanceof Throwable) {
+			throw new ExecutionException((Throwable) obj);
+		}
+		return obj;
 	}
 
 	@Override
 	public Serializable get(long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
-		return listener.get(corrId, unit.toMillis(timeout));
+		Serializable obj = listener.get(corrId, unit.toMillis(timeout));
+		if(obj instanceof Throwable) {
+			throw new ExecutionException((Throwable) obj);
+		}
+		return obj;
 	}
 
 	@Override

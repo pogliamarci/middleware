@@ -5,6 +5,7 @@ import it.polimi.distsys.jmscluster.utils.ConnectionException;
 import it.polimi.distsys.jmscluster.utils.JobSubmissionFailedException;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.jms.JMSException;
@@ -67,13 +68,16 @@ public class ClusterClient {
 	}
 	
 	public Serializable submitJob(Job j) 
-			throws JobSubmissionFailedException, InterruptedException {
+			throws JobSubmissionFailedException, InterruptedException, ExecutionException {
 		if(!connected) {
 			throw new JobSubmissionFailedException("Client is not connected");
 		}
 		String cid = postJob(j);
 		listener.jobPosted(cid);
-		return listener.get(cid);
+		Serializable obj = listener.get(cid);
+		if(obj instanceof Throwable) {
+			throw new ExecutionException((Throwable) obj);
+		} else return obj;
 	}
 	
 	public Future<Serializable> submitJobAsync(Job j) 

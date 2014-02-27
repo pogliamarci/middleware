@@ -3,6 +3,7 @@ package it.polimi.distsys.jmscluster.worker;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -131,14 +132,18 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		@Override
 		public void run() {
 			try {
-				Job job = (Job) msg.getObject();
-				Serializable ret = job.run();
 				QueueSession locSession = 
-					jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+						jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 				ObjectMessage reply = locSession.createObjectMessage();
 				reply.setJMSCorrelationID(msg.getJMSMessageID());
-				reply.setObject(ret);
 				Queue tempQueue = (Queue) msg.getJMSReplyTo();
+				try {
+					Job job = (Job) msg.getObject();
+					Serializable ret = job.run();
+					reply.setObject(ret);
+				} catch(Exception e) {
+					reply.setObject(new ExecutionException(e));
+				}
 				MessageProducer prod = locSession.createProducer(tempQueue);
 				prod.send(reply);
 			} catch (JMSException e) {
