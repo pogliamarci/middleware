@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.client;
 
 import java.io.Serializable;
@@ -9,10 +16,10 @@ import java.util.concurrent.TimeoutException;
 public class AsyncResult implements Future<Serializable> {
 
 	private final String corrId;
-	private final ReplyProcesser listener;
+	private final ReplyManager listener;
 	private boolean cancelled = false;
 	
-	public AsyncResult(String corrId, ReplyProcesser listener)
+	public AsyncResult(String corrId, ReplyManager listener)
 	{
 		this.corrId = corrId;
 		this.listener = listener;

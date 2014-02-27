@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.worker;
 
 import java.util.ArrayList;
@@ -91,6 +98,10 @@ public class JobsTracker {
 		informListeners();
 	}
 	
+	public int getJobs() {
+		return ongoingJobs.get();
+	}
+	
 	private void informListeners() {
 		boolean st = canAccept();
 		for(ServerStatusListener lst : lsts) {
@@ -110,9 +121,5 @@ public class JobsTracker {
 		}
 		return true;
 	}
-	
-	public int getJobs() {
-		return ongoingJobs.get();
-	}
-	
+
 }

@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.client;
 
 import it.polimi.distsys.jmscluster.jobs.Job;
@@ -19,12 +26,19 @@ import javax.jms.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-//The methods of an object of this class are intended to be called always by the
-//same thread, because in the JMS model there could be only a single thread
-//that uses one session, and this class holds a JMS session.
-//A more general approach would be for this class to spawn a thread that 
-//holds the session, listening to job post requests. However, for simplicity,
-//we limit ourselves to ask the caller to take care about this.
+/**
+ * Client API for the remote job execution.
+ * 
+ * This class is not thread-safe, and the methods of an object belonging to this class
+ * are intended to be called always by the same thread (in the JMS model there can be 
+ * a single thread associated to a session: this class holds a single JMS session and
+ * the messages are posted by the calling thread itself).
+ * 
+ * If you need to submit jobs from multiple threads, create multiple ClusterClient
+ * classes. The Futures returned holding the asynchronous results that are returned when
+ * a job is submitted are thread safe. 
+ *
+ */
 public class ClusterClient {
 
 	private boolean connected;
@@ -32,7 +46,7 @@ public class ClusterClient {
 	private QueueSession session;
 	private Queue tempQueue;
 	private MessageProducer jobQueuePublisher;
-	private ReplyProcesser listener;
+	private ReplyManager listener;
 	private InitialContext ictx;
 	
 	public ClusterClient(InitialContext ictx) {
@@ -57,7 +71,7 @@ public class ClusterClient {
 			conn = qcf.createQueueConnection();
 			session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			tempQueue = session.createTemporaryQueue();
-			listener = new ReplyProcesser();
+			listener = new ReplyManager();
 			listener.listen(conn, tempQueue);
 			jobQueuePublisher = session.createSender(jobsQueue);
 			conn.start();
@@ -73,7 +87,7 @@ public class ClusterClient {
 			throw new JobSubmissionFailedException("Client is not connected");
 		}
 		String cid = postJob(j);
-		listener.jobPosted(cid);
+		listener.signalJobPosted(cid);
 		Serializable obj = listener.get(cid);
 		if(obj instanceof Throwable) {
 			throw new ExecutionException((Throwable) obj);
@@ -112,7 +126,7 @@ public class ClusterClient {
 			/* This thing is HORRIBLE, but useful because I know the message ID only after the send()... */
 			synchronized(listener) {
 				jobQueuePublisher.send(msg);
-				listener.jobPosted(msg.getJMSMessageID());
+				listener.signalJobPosted(msg.getJMSMessageID());
 			}
 			return msg.getJMSMessageID();
 		} catch (JMSException e) {

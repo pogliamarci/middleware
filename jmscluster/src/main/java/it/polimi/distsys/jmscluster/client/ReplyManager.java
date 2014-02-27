@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.client;
 
 import java.io.Serializable;
@@ -19,9 +26,16 @@ import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
 
-public class ReplyProcesser {
+/**
+ * Manager for the temporary queue to receive the replies. An object of this
+ * class listens on the temporary queue where replies are posted, and renders the
+ * results that are received available for consumption by the client.
+ * It also keeps track of the messages that have been sent, so that the client can
+ * be shut down gracefully only when all replies have been received.
+ */
+public class ReplyManager {
 
-	private static final Logger LOGGER = Logger.getLogger(ReplyProcesser.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(ReplyManager.class.getName());
 	
 	private Map<String, Serializable> results;
 	private Set<String> outstandingReplies;
@@ -29,7 +43,7 @@ public class ReplyProcesser {
 	private QueueSession session;
 	private QueueReceiver recv;
 	
-	public ReplyProcesser() {
+	public ReplyManager() {
 		results = new HashMap<String, Serializable>();
 		outstandingReplies = new HashSet<String>();
 		toBeDiscarded = new HashSet<String>();
@@ -75,6 +89,13 @@ public class ReplyProcesser {
 		return results.containsKey(corrId);
 	}
 	
+	public synchronized void signalJobPosted(String id) {
+		outstandingReplies.add(id);
+	}
+	
+	/**
+	 * Stop the listener thread and close the JMS session.
+	 */
 	public void disconnect() throws JMSException {
 		if(session != null) {
 			session.close();
@@ -86,10 +107,13 @@ public class ReplyProcesser {
 		}
 	}
 
-	public synchronized void jobPosted(String id) {
-		outstandingReplies.add(id);
-	}
-
+	/**
+	 * Waits that all the jobs have been completed by the server, and that
+	 * all the replies have been received by the client. This is needed so
+	 * that when the server sends a reply to the temporary queue, the queue
+	 * exists. Another approach (not implemented) could be to send to the server 
+	 * a job cancellation request.
+	 */
 	public synchronized void waitForOutstandingReplies() 
 			throws InterruptedException {
 		while(!outstandingReplies.isEmpty()) {
@@ -99,6 +123,11 @@ public class ReplyProcesser {
 
 	// In order not to waste resource, if the future is cancelled 
 	// we make sure to discard the result of the call...
+	/**
+	 * When the AsyncResult future is cancelled, we need to make
+	 * sure that the result of the call is never saved in the HashMap, 
+	 * otherwise resources are wasted.
+	 */
 	public synchronized void markAsCancelled(String corrId) {
 		if(results.containsKey(corrId)) {
 			results.remove(corrId);
@@ -135,7 +164,7 @@ public class ReplyProcesser {
 			if (!(msg instanceof ObjectMessage)) {
 				return;
 			}
-			ReplyProcesser.this.onMessage((ObjectMessage) msg);
+			ReplyManager.this.onMessage((ObjectMessage) msg);
 		}
 	}
 	

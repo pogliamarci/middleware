@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.worker;
 
 import java.io.BufferedReader;
@@ -6,22 +13,23 @@ import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Just wait for the "leave" command to be issued...
+ */
 public class CommandLine extends Thread {
 	
-	private Coordinator manager;
-	private JobsListener acceptor;
+	private Server server;
 	
-	public CommandLine(Coordinator manager, JobsListener acceptor) {
-		this.manager = manager;
-		this.acceptor = acceptor;
+	public CommandLine(Server server) {
+		this.server = server;
 	}
 	
 	@Override
 	public void run() {
 		InputStreamReader is = new InputStreamReader(System.in);
 		BufferedReader br = new BufferedReader(is);
-		String cmd = null;
 		
+		String cmd = null;
 		do {
 			try {
 				cmd = br.readLine();
@@ -29,21 +37,10 @@ public class CommandLine extends Thread {
 				Logger l = Logger.getLogger(this.getClass().getName());
 				l.log(Level.WARNING, "Exception reading line: " + e.getMessage());
 			}
-		} while(!cmd.equals("leave"));
-		
-		acceptor.interrupt();
-		manager.shutdown();
-		
-		System.out.println("Waiting for pending jobs completion...");
-		
-		try {
-			acceptor.join();
-			manager.emptyQueue();
-		} catch (InterruptedException e) {
-			Logger l = Logger.getLogger(this.getClass().getName());
-			l.log(Level.WARNING, "Thread interrupted during shutdown: " + e.getMessage());
-		}
-		
-		System.exit(0);
+		} while(!cmd.trim().equals("leave"));
+
+		System.out.println("Waiting for all the jobs to complete...");
+		server.leave();
+		System.out.println("Quitting.");
 	}
 }

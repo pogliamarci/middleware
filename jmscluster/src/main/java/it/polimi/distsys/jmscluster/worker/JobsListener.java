@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.worker;
 
 import java.io.Serializable;
@@ -18,6 +25,7 @@ import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
@@ -43,8 +51,8 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	
 	private ExecutorService pool = Executors.newCachedThreadPool();
 	
-	public JobsListener(QueueConnection jqc, Queue q) {
-		jobsConn = jqc;
+	public JobsListener(QueueConnectionFactory qcf, Queue q) throws JMSException {
+		jobsConn = qcf.createQueueConnection();
 		jobsQueue = q;
 		isOk = false;
 		lsts = new ArrayList<JobsSignalListener>();
@@ -78,6 +86,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 					onMessage(newJob);
 				}
 			}
+			pool.shutdown();
 		} catch(JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
 			l.log(Level.WARNING, "Error with JMS setup: " + e.getMessage());
@@ -101,6 +110,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	public void interrupt() {
 		super.interrupt();
 		pleaseStop = true;
+	}
+	
+	public void closeConnection() throws JMSException {
+		jobsConn.close();
 	}
 	
 	private synchronized void waitForAcceptanceCondition() 

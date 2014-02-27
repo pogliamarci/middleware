@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.utils;
 
 import java.net.ConnectException;
@@ -15,6 +22,13 @@ import org.objectweb.joram.client.jms.admin.AdminModule;
 import org.objectweb.joram.client.jms.admin.User;
 import org.objectweb.joram.client.jms.tcp.TcpConnectionFactory;
 
+/**
+ * Set up the required queues and topics on the Joram server.
+ * For simplicity, user authentication is disabled and the Joram server
+ * is set up with the default administrator username and password.
+ * Of course, in a real case, we should set up a user for the queue
+ * and the topic (and the client and the workers should need to authenticate).
+ */
 public class LocalAdmin {
 	
 	private static final String ADMIN_USER = "root";

@@ -1,3 +1,10 @@
+/*
+ * JMSCluster
+ *
+ * Middleware Technologies for Distributed Systems project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+
 package it.polimi.distsys.jmscluster.worker;
 
 import java.util.logging.Level;
@@ -85,8 +92,7 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 			tracker.update(cm.getN(), cm.getJobs());
 			break;
 		case JOIN:
-			if(!tracker.exists(cm.getN()))
-			{
+			if(!tracker.exists(cm.getN())) {
 				/* inform the existing processes of my existence... */
 				sendJoin();
 			}
@@ -123,15 +129,14 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 		}
 	}
 	
-	public synchronized void emptyQueue() throws InterruptedException {
-		while(tracker.getJobs() != 0) {
-			wait();
-		}
-	}
-	
-	public void shutdown() {
+	public void shutdown() throws JMSException, InterruptedException {
 		isLeaving = true;
 		sendLeave();
+		synchronized(this) {
+			while(tracker.getJobs() != 0) {
+				wait();
+			}
+		}
 	}
 	
 	private void sendUpdate() {
