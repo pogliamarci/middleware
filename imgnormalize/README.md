@@ -1,5 +1,5 @@
-Parallel image normalization with MPI & OpenMP
-==============================================
+Parallel image normalization
+============================
 
 Use MPI (+OpenMP) to implement a parallel version of the [image normalization
 algorithm](http://en.wikipedia.org/wiki/Normalization_(image_processing\)). In
