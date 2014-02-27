@@ -81,9 +81,7 @@ public class ClusterClient {
 		if(!connected) {
 			throw new JobSubmissionFailedException("Client is not connected");
 		}
-
 		String corrId = postJob(j);
-		listener.jobPosted(corrId);
 		return new AsyncResult(corrId, listener);
 	}
 	
@@ -107,7 +105,11 @@ public class ClusterClient {
 			ObjectMessage msg = session.createObjectMessage();
 			msg.setObject(j);
 			msg.setJMSReplyTo(tempQueue);
-			jobQueuePublisher.send(msg);
+			/* This thing is HORRIBLE, but useful because I know the message ID only after the send()... */
+			synchronized(listener) {
+				jobQueuePublisher.send(msg);
+				listener.jobPosted(msg.getJMSMessageID());
+			}
 			return msg.getJMSMessageID();
 		} catch (JMSException e) {
 			throw new JobSubmissionFailedException("can't post job", e);

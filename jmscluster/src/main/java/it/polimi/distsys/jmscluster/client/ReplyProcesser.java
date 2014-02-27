@@ -109,7 +109,7 @@ public class ReplyProcesser {
 	private synchronized void onMessage(ObjectMessage msg) {
 		try {
 			String corrId = msg.getJMSCorrelationID();
-			outstandingReplies.remove(msg.getJMSCorrelationID());
+			outstandingReplies.remove(corrId);
 			if(toBeDiscarded.contains(corrId))
 			{
 				toBeDiscarded.remove(corrId);

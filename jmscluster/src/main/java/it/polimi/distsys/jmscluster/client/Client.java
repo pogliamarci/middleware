@@ -2,6 +2,7 @@ package it.polimi.distsys.jmscluster.client;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -61,23 +62,24 @@ public final class Client {
 			results.add(client.submitJobAsync(new HelloWorldJob("JOB 6")));
 			
 			while(!results.isEmpty()) {
-				for(int i = 0; i < results.size(); i++)
+				Iterator<Future<Serializable>> it = results.iterator();
+				while(it.hasNext()) {
 					try {
-						Serializable out = results.get(i).get(JOB_WAITING_TIME, TimeUnit.MILLISECONDS);
+						Serializable out = it.next().get(JOB_WAITING_TIME, TimeUnit.MILLISECONDS);
 						System.out.println(out);
-						results.remove(i);
-					}
-					catch(TimeoutException e) {
+						it.remove();
+					} catch(TimeoutException e) {
 						//nothing to do..
 					}
+				}
 			}
-			
+	
 			client.disconnect();
 			System.exit(0);
 		} catch (JobSubmissionFailedException | ConnectionException
 				| InterruptedException | ExecutionException e) {
 			Logger l = Logger.getLogger(Client.class.getName());
-			l.log(Level.WARNING, "Error running the cline: " + e.getMessage());
+			l.log(Level.WARNING, "Error running the client: " + e.getMessage());
 			System.exit(1);
 		}
 	}
