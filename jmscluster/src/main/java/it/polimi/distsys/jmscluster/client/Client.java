@@ -67,7 +67,9 @@ public final class Client {
 						System.out.println(out);
 						results.remove(i);
 					}
-					catch(TimeoutException e) { }
+					catch(TimeoutException e) {
+						//nothing to do..
+					}
 			}
 			
 			client.disconnect();

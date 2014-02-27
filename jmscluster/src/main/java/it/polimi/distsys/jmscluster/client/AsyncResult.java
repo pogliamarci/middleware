@@ -8,8 +8,8 @@ import java.util.concurrent.TimeoutException;
 
 public class AsyncResult implements Future<Serializable> {
 
-	private String corrId;
-	private ReplyProcesser listener;
+	private final String corrId;
+	private final ReplyProcesser listener;
 	private boolean cancelled = false;
 	
 	public AsyncResult(String corrId, ReplyProcesser listener)

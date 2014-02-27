@@ -54,12 +54,15 @@ public class ReplyProcesser {
 			throws InterruptedException, TimeoutException {
 		long initial = System.currentTimeMillis();
 		if(millis == 0) {
-			return get(corrId);
+			return getAndRemove(corrId);
 		}
 		while(!results.containsKey(corrId))
 		{
 			long now = System.currentTimeMillis();
-			if(now < initial || (now - initial) >= millis) {
+			if(now < initial) {
+				now = initial; // sanity check...
+			}
+			if((now - initial) < millis) {
 				wait(millis - (now - initial));
 			} else {
 				throw new TimeoutException();
