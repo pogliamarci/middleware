@@ -132,3 +132,19 @@ In order to run again the program, you need to delete the `output` directory and
 $ hadoop [--config <conf>] fs -rm output/*
 $ hadoop [--config <conf>] fs -rmdir output
 ```
+
+Note: the number of mappers (and, thus, how the work is split among the nodes
+in the cluster) depends upon the HDFS block size of the input file. If the file is
+small, you can experience that all the mappers are run by a single host. To overcome
+this problem, explicitly set the HDFS block size to a smaller value than the default one.
+
+To copy the input file to HDFS setting the block size, run the following command:
+```
+hadoop fs -D dfs.block.size=$BLOCK_SIZE -copyFromLocal dataset.csv .
+```
+where `$BLOCK_SIZE` is the size (in bytes) you want to set for a block, 
+and should be a multple of 512 bytes. For example, `$BLOCK_SIZE=41943040` sets the 
+block size to about 40 MB, which produces 19 mappers for a dataset of about 700 MB.
+
+To change also the number of reducers, pass the `-D mapred.reduce.tasks=<reducers>` parameter 
+to `hadoop` when running the job.
