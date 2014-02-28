@@ -3,6 +3,6 @@
 
 #include <sys/time.h>
 
-void print_duration(struct timeval start, struct timeval end, char* why);
+void print_duration(struct timeval start, struct timeval end, char* why, int pid);
 
 #endif

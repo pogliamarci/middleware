@@ -209,11 +209,11 @@ BENCH_GETTIME(&tSaveEnd);
 BENCH_GETTIME(&tEnd);
 
 #ifdef BENCHMARK
-    print_duration(tStart, tEnd, "total");
-    print_duration(tOpenStart, tOpenEnd, "open");
-    print_duration(tBoundsStart, tBoundsEnd, "bounds (max and min)");
-    print_duration(tNormStart, tNormEnd, "normalization");
-    print_duration(tSaveStart, tSaveEnd, "save");
+    print_duration(tStart, tEnd, "total", rank);
+    if(rank == 0) print_duration(tOpenStart, tOpenEnd, "open", rank);
+    print_duration(tBoundsStart, tBoundsEnd, "bounds (max and min)", rank);
+    print_duration(tNormStart, tNormEnd, "normalization", rank);
+    if(rank == 0) print_duration(tSaveStart, tSaveEnd, "save", rank);
 #endif
 
     return EXIT_SUCCESS;
