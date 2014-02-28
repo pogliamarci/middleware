@@ -133,7 +133,7 @@ $ hadoop [--config <conf>] fs -rm output/*
 $ hadoop [--config <conf>] fs -rmdir output
 ```
 
-Note: the number of mappers (and, thus, how the work is split among the nodes
+***Note***: the number of mappers (and, thus, how the work is split among the nodes
 in the cluster) depends upon the HDFS block size of the input file. If the file is
 small, you can experience that all the mappers are run by a single host. To overcome
 this problem, explicitly set the HDFS block size to a smaller value than the default one.
