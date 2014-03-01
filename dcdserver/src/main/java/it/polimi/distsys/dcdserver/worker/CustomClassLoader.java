@@ -44,8 +44,7 @@ public class CustomClassLoader extends ClassLoader {
 		/* Try to load it from our repository */
 		classData = getClassFromClient(className);
 		if (classData == null) {
-			//throw new ClassNotFoundException();
-			System.out.println("funziona?");
+			throw new ClassNotFoundException();
 		}
 		
 		System.err.println("Class "+className+" loaded.");

@@ -56,8 +56,6 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		jobsQueue = q;
 		isOk = false;
 		lsts = new ArrayList<JobsSignalListener>();
-		
-		Thread.currentThread().setContextClassLoader(new CustomClassLoader());
 	}
 	
 	public void addListener(JobsSignalListener lst) {
@@ -142,6 +140,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		
 		JobExecutor(ObjectMessage msg) {
 			this.msg = msg;
+			setContextClassLoader(new CustomClassLoader());
 		}
 		
 		@Override
