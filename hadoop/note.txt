@@ -1,7 +1,0 @@
-To compile the project: `mvn package`. This command should generate a `hadoop-prj-0.1.jar` file containing the compiled Java classes.
-
-Single host: standalone mode
-============================
-export HADOOP_CLASSPATH=hadoop-prj-0.1.jar
-hadoop it.polimi.distsys.hadoop.PowerOutliersJob -fs file:/// data/data.csv output
-
