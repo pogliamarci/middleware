@@ -1,5 +1,5 @@
 /*
- * TemperatureOutliersJob - Apache Pig version
+ * Temperature Outliers - Apache Pig version
  *
  * Middleware Technologies for Distributed Systems project, February 2014
  * Marcello Pogliani, Alessandro Riva

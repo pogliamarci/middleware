@@ -1,5 +1,11 @@
-#ifndef _DISTSYS_IMAGE_H
-#define _DISTSYS_IMAGE_H
+/*
+ * Image normalization with MPI and OpenMP
+ *
+ * Middleware Technologies for Distributed Systems Project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+#ifndef _IMAGEIO_H
+#define _IMAGEIO_H
 
 #include <stdint.h>
 #include <stdlib.h>

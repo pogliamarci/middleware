@@ -1,5 +1,11 @@
-#ifndef _DISTSYS_IMGNORMALIZE_CORE_H
-#define _DISTSYS_IMGNORMALIZE_CORE_H
+/*
+ * Image normalization with MPI and OpenMP
+ *
+ * Middleware Technologies for Distributed Systems Project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
+#ifndef _IMGNORMALIZE_CORE_H
+#define _IMGNORMALIZE_CORE_H
 
 #include "imageio.h"
 

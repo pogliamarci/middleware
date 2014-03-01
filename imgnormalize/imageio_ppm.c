@@ -1,3 +1,9 @@
+/*
+ * Image normalization with MPI and OpenMP
+ *
+ * Middleware Technologies for Distributed Systems Project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
 #include "imageio_ppm.h"
 #include "imageio.h"
 
@@ -165,7 +171,7 @@ const char* plain_magic_number(const image_t* img)
 // Given our constraints, using this function instead of using the C standard
 // library improves execution time of about a magnitude order.
 // CRITICAL: buffer needs to be sized at least nchar*sizeof(char)*4+2
-// and shoule be already allocated when calling this function.
+// and should be already allocated when calling this function.
 char* line2string(uint8_t* chararray, int nchar, char* buffer)
 {
     // we populate the string starting from the end of the buffer...

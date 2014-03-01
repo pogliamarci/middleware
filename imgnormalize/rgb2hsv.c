@@ -1,11 +1,17 @@
+/*
+ * Image normalization with MPI and OpenMP
+ * 
+ * RGB to HSV conversion - Credits: http://www.shervinemami.info/colorConversion.html
+ *
+ * Middleware Technologies for Distributed Systems Project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
 #include "rgb2hsv.h"
 
-#include "math.h"
-
-/*  Credits: http://www.shervinemami.info/colorConversion.html */
+#include <math.h>
 
 /**
- * Create a HSV image from the RGB image using the full 8-bits, since OpenCV only allows Hues up to 180 instead of 255.
+ * Create a HSV image from the RGB image using the full 8-bits. 
  * ref: "http://cs.haifa.ac.il/hagit/courses/ist/Lectures/Demos/ColorApplet2/t_convert.html"
  * Remember to free the generated HSV image.
  */
@@ -117,7 +123,7 @@ hsv_point_t rgb2hsv(const rgb_point_t* rgb)
 
 
 /**
- * Create an RGB image from the HSV image using the full 8-bits, since OpenCV only allows Hues up to 180 instead of 255.
+ * Create an RGB image from the HSV image using the full 8-bits.
  * ref: "http://cs.haifa.ac.il/hagit/courses/ist/Lectures/Demos/ColorApplet2/t_convert.html"
  * Remember to free the generated RGB image.
  */

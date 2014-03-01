@@ -1,3 +1,9 @@
+/*
+ * Image normalization with MPI and OpenMP
+ *
+ * Middleware Technologies for Distributed Systems Project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
 #include <stdio.h>
 
 #include "benchmark_utils.h"

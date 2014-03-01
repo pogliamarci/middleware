@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#syntax: ./script.sh image_file output-dir
+# syntax: ./script.sh image_file output-dir
 
 export LD_LIBRARY_PATH=/home/marcello/mpi/lib
 dir=data/$2
@@ -22,5 +22,3 @@ for nth in {1,2,4,8}; do
 		/usr/bin/time /home/marcello/mpi/bin/mpirun -np $nth ./imgnormalize -m 20 -M 50 -f $1 -o /tmp/out.ppm 2&>> $filename
 	done
 done
-
-echo "I risultati del test sono pronti" | mailx -s "[script.sh] Test" marcello.pogliani@gmail.com

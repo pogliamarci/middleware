@@ -1,3 +1,9 @@
+/*
+ * Image normalization with MPI and OpenMP
+ *
+ * Middleware Technologies for Distributed Systems Project, February 2014
+ * Marcello Pogliani, Alessandro Riva
+ */
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -6,15 +12,7 @@
 
 #include "imageio.h"
 #include "imgnormalize_core.h"
-
-#ifdef BENCHMARK
 #include "benchmark_utils.h"
-#define BENCH_GETTIME(x) do {		\
-      gettimeofday((x), NULL);		\
-      } while(0)
-#else
-#define BENCH_GETTIME(x)
-#endif
 
 #define OUTFNAME_DEFAULT "out.ppm"
 
