@@ -2,7 +2,7 @@
  * TemperatureOutliersJob - Apache Pig version
  *
  * Middleware Technologies for Distributed Systems project, February 2014
- * Marcello Pogliani, Alessandro Riva <{marcello.pogliani, alessandro10.riva}@mail.polimi.it>
+ * Marcello Pogliani, Alessandro Riva
  */
 package it.polimi.distsys.pig;
 
@@ -35,6 +35,7 @@ public class Median extends EvalFunc<Integer> {
 			if(i == halfSize) {
 				median += ((Integer) cur.get(0));
 				if(isEven) median /= 2;
+				return median;
 			}
 			++i;
 		}
