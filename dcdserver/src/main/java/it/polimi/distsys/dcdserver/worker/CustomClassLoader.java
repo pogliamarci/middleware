@@ -12,8 +12,9 @@ public class CustomClassLoader extends ClassLoader {
 	private ObjectMessage msg;
 	
 	
-	public CustomClassLoader(CommunicationHandler handler, ObjectMessage msg) {
-		super(CustomClassLoader.class.getClassLoader());
+	public CustomClassLoader(CommunicationHandler handler, ObjectMessage msg, ClassLoader classLoader) {
+		super(classLoader);
+
 		this.handler = handler;
 		this.msg = msg;
 	}
@@ -62,12 +63,12 @@ public class CustomClassLoader extends ClassLoader {
 		System.err.println("Class "+className+" loaded.");
 		
 		/* Define the class */
-		result = defineClass(className, classData, 0, classData.length);
+		result = defineClass(className, classData, 0, classData.length, null);
 		if (result == null) {
 			System.err.println("Format Error");
 			throw new ClassFormatError();
 		}
-
+		
 		return result;  
 	}
 
@@ -76,7 +77,6 @@ public class CustomClassLoader extends ClassLoader {
 		
 		try {
 			classData = handler.lookupClass(className, msg.getJMSReplyTo());
-			System.out.println("ricevuto");
 		}
 		catch (JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());

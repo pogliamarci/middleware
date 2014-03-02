@@ -57,8 +57,6 @@ public class CommunicationHandler {
 				e.printStackTrace();
 			}
 			
-			System.out.println(classes.get(msgId).toString());
-			
 			ret = classes.get(msgId);
 			classes.remove(msgId);
 		} catch (JMSException e) {

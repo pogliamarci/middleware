@@ -7,12 +7,18 @@
 
 package it.polimi.distsys.dcdclient.client;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -172,17 +178,33 @@ public class ReplyManager {
 			
 			ReplyManager.this.onMessage((ObjectMessage) msg);
 		}
-
 		
 		private void handleRemoteLookup(TextMessage msg) {
-			
 			ObjectMessage reply;
 			try {
 				reply = session.createObjectMessage();
 				reply.setJMSCorrelationID(msg.getJMSMessageID());
 				
-				reply.setObject(new String("Ci si prova"));
-				
+				try {
+					String resourceName = msg.getText().replace('.', '/') + ".class";
+					
+					FileInputStream is =
+							new FileInputStream("/Users/Allucinator/Documents/middleware/dcdclient/target/classes/"+resourceName);  
+					ByteArrayOutputStream byteStream = new ByteArrayOutputStream();  
+		            int nextValue = is.read();  
+		            
+		            while (-1 != nextValue) {  
+		                byteStream.write(nextValue);  
+		                nextValue = is.read();  
+		            }  
+
+		            byte[] classByte = byteStream.toByteArray(); 
+					
+					reply.setObject(classByte);
+				} catch (Exception e) {  
+					System.out.println("Unable to load class " + msg.getText());  
+				}
+
 				Queue tempQueue = (Queue) msg.getJMSReplyTo();
 				MessageProducer prod = session.createProducer(tempQueue);
 				prod.send(reply);

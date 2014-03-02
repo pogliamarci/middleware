@@ -148,7 +148,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		JobExecutor(CommunicationHandler handler, ObjectMessage msg) {
 			this.msg = msg;
 			this.handler = handler;
-			setContextClassLoader(new CustomClassLoader(handler, msg));
+			if(getContextClassLoader() instanceof CustomClassLoader)
+				setContextClassLoader(new CustomClassLoader(handler, msg, getContextClassLoader().getParent()));
+			else
+				setContextClassLoader(new CustomClassLoader(handler, msg, getContextClassLoader()));
 		}
 		
 		@Override
@@ -157,7 +160,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 				Serializable ret;
 				try {
 					Job job = (Job) msg.getObject();
-					ret = null; //= job.run();
+					ret = job.run();
 				} catch(Exception e) {
 					ret = new ExecutionException(e);
 				}
