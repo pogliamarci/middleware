@@ -197,7 +197,7 @@ public class ReplyManager {
 					
 					reply.setObject(classByte);
 				} catch (Exception e) {  
-					System.out.println("Unable to load class " + msg.getText());  
+					System.err.println("Unable to load class " + msg.getText());  
 				}
 
 				Queue tempQueue = (Queue) msg.getJMSReplyTo();
