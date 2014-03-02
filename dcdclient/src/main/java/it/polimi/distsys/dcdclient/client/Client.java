@@ -68,6 +68,7 @@ public final class Client {
 	
 	private static void getResults(List<Future<Serializable>> results, long timeout) 
 			throws InterruptedException {
+		
 		Iterator<Future<Serializable>> it = results.iterator();
 		while(it.hasNext()) {
 			try {

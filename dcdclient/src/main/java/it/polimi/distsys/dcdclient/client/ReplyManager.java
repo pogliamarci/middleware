@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -25,6 +24,7 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 /**
  * Manager for the temporary queue to receive the replies. An object of this
@@ -139,6 +139,7 @@ public class ReplyManager {
 	private synchronized void onMessage(ObjectMessage msg) {
 		try {
 			String corrId = msg.getJMSCorrelationID();
+			
 			outstandingReplies.remove(corrId);
 			if(toBeDiscarded.contains(corrId))
 			{
@@ -161,11 +162,23 @@ public class ReplyManager {
 	private class ReplyMessageListener implements MessageListener {
 		@Override
 		public void onMessage(Message msg) {
-			if (!(msg instanceof ObjectMessage)) {
-				return;
-			}
+			if (!(msg instanceof ObjectMessage))
+				if (msg instanceof TextMessage) {
+					try {
+						handleRemoteLookup(((TextMessage) msg).getText());
+					} catch (JMSException e) {
+						e.printStackTrace();
+					}
+				} else
+					return;
+			
 			ReplyManager.this.onMessage((ObjectMessage) msg);
 		}
+
+		
+		private void handleRemoteLookup(String className) {
+			//TODO
+			System.out.println("LOOKUP!");
+		}
 	}
-	
 }

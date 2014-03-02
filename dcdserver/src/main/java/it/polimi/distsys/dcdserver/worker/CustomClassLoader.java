@@ -1,9 +1,20 @@
 package it.polimi.distsys.dcdserver.worker;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.jms.JMSException;
+import javax.jms.ObjectMessage;
+
 public class CustomClassLoader extends ClassLoader {
 	
-	public CustomClassLoader() {
+	private CommunicationHandler handler;
+	private ObjectMessage msg;
+	
+	
+	public CustomClassLoader(CommunicationHandler handler, ObjectMessage msg) {
 		super(CustomClassLoader.class.getClassLoader());
+		this.handler = handler;
+		this.msg = msg;
 	}
 	
 	@Override
@@ -52,7 +63,7 @@ public class CustomClassLoader extends ClassLoader {
 		/* Define the class */
 		result = defineClass(className, classData, 0, classData.length);
 		if (result == null) {
-			System.out.println("Format Error");
+			System.err.println("Format Error");
 			throw new ClassFormatError();
 		}
 
@@ -60,7 +71,14 @@ public class CustomClassLoader extends ClassLoader {
 	}
 
 	private byte[] getClassFromClient(String className) {
-		// TODO a great question mark...
+		try {
+			handler.lookupClass(className, msg.getJMSMessageID(), msg.getJMSReplyTo());
+		}
+		catch (JMSException e) {
+			Logger l = Logger.getLogger(this.getClass().getName());
+			l.log(Level.WARNING, "Error looking for class: " + e.getMessage());
+		}
+		
 		return null;
 	}
 }

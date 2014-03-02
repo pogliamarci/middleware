@@ -7,21 +7,16 @@
 
 package it.polimi.distsys.dcdserver.worker;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import it.polimi.distsys.dcdserver.jobs.Job;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
@@ -29,6 +24,7 @@ import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
 
 /**
  * Implements a thread listening for jobs in the jobsQueue and executes them using a thread pool.
@@ -45,6 +41,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	
 	private QueueConnection jobsConn;
 	private Queue jobsQueue;
+	private CommunicationHandler handler;
 	private boolean isOk;
 	private boolean pleaseStop = false;
 	private List<JobsSignalListener> lsts;
@@ -73,6 +70,13 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		try {
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
+			
+			QueueSession locSession = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+			TemporaryQueue classesQueue = locSession.createTemporaryQueue();
+			QueueReceiver classesRecv = locSession.createReceiver(classesQueue);
+			
+			handler = new CommunicationHandler(locSession);
+			
 			jobsConn.start();
 			while(!shouldStop()) {
 				try {
@@ -102,7 +106,7 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		if(receive instanceof ObjectMessage) {
 			ObjectMessage msg = (ObjectMessage) receive;
 			signalJobStart();
-			pool.execute(new JobExecutor(msg));
+			pool.execute(new JobExecutor(handler, msg));
 		}
 	}
 	
@@ -137,30 +141,18 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 	
 	private class JobExecutor implements Runnable {
 		private ObjectMessage msg;
+		private CommunicationHandler handler;
 		
-		JobExecutor(ObjectMessage msg) {
+		JobExecutor(CommunicationHandler handler, ObjectMessage msg) {
 			this.msg = msg;
-			setContextClassLoader(new CustomClassLoader());
+			this.handler = handler;
+			setContextClassLoader(new CustomClassLoader(handler, msg));
 		}
 		
 		@Override
 		public void run() {
 			try {
-				QueueSession locSession = 
-						jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-				ObjectMessage reply = locSession.createObjectMessage();
-				reply.setJMSCorrelationID(msg.getJMSMessageID());
-				Queue tempQueue = (Queue) msg.getJMSReplyTo();
-				try {
-					Job job = (Job) msg.getObject();
-					
-					//Serializable ret = job.run();
-					//reply.setObject(ret);
-				} catch(Exception e) {
-					reply.setObject(new ExecutionException(e));
-				}
-				MessageProducer prod = locSession.createProducer(tempQueue);
-				prod.send(reply);
+				handler.sendResult((Job) msg.getObject(), msg.getJMSMessageID(), msg.getJMSReplyTo());
 			} catch (JMSException e) {
 				Logger l = Logger.getLogger(this.getClass().getName());
 				l.log(Level.WARNING, "Error sending reply: " + e.getMessage());
