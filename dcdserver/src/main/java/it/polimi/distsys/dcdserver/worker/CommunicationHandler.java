@@ -20,31 +20,36 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 
-public class CommunicationHandler implements MessageListener {
-	private QueueSession locSession;
+public class CommunicationHandler {
+	private QueueSession session;
+	private TemporaryQueue classesQueue;
 	private Map<String, Serializable> classes;
 	private Set<String> requests;
 	
 	public CommunicationHandler(QueueConnection jobsConn) throws JMSException {
-		locSession = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-		TemporaryQueue classesQueue = locSession.createTemporaryQueue();
-		QueueReceiver classesRecv = locSession.createReceiver(classesQueue);
 		classes = new HashMap<String, Serializable>();
 		requests = new HashSet<String>();
 		
-		classesRecv.setMessageListener(this);
+		session = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+		
+		QueueSession locSession = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+		classesQueue = locSession.createTemporaryQueue();
+		QueueReceiver classesRecv = locSession.createReceiver(classesQueue);
+		
+		classesRecv.setMessageListener(new ClassesListener());
 	}
 	
 	public synchronized void lookupClass(String className, String msgId, Destination ReplyTo) {
 		TextMessage reply;
 		try {
-			reply = locSession.createTextMessage();
+			reply = session.createTextMessage();
 			reply.setJMSCorrelationID(msgId);
 			Queue tempQueue = (Queue) ReplyTo;
-		
+			
+			reply.setJMSReplyTo(classesQueue);
 			reply.setText(className);
-		
-			MessageProducer prod = locSession.createProducer(tempQueue);
+
+			MessageProducer prod = session.createProducer(tempQueue);
 			prod.send(reply);
 
 		} catch (JMSException e) {
@@ -57,30 +62,36 @@ public class CommunicationHandler implements MessageListener {
 	public synchronized void sendResult(Serializable ret, String msgId, Destination ReplyTo)
 			throws JMSException {
 		
-		ObjectMessage reply = locSession.createObjectMessage();
+		ObjectMessage reply = session.createObjectMessage();
 		reply.setJMSCorrelationID(msgId);
 		Queue tempQueue = (Queue) ReplyTo;
 		reply.setObject(ret);
-		MessageProducer prod = locSession.createProducer(tempQueue);
+		MessageProducer prod = session.createProducer(tempQueue);
 		prod.send(reply);
 	}
 
-	@Override
-	public void onMessage(Message msg) {
+	private class ClassesListener implements MessageListener {
 		
-		if(!(msg instanceof ObjectMessage))
-			return;
-		
-		ObjectMessage objMsg = (ObjectMessage) msg;
-		
-		synchronized(this) {
-			try {
-				classes.put(objMsg.getJMSMessageID(), objMsg.getObject());
-				System.out.println(objMsg.getObject().toString());
-			} catch (JMSException e) {
-				e.printStackTrace();
-			}
+		public ClassesListener() {
 		}
 		
+		@Override
+		public void onMessage(Message msg) {
+			
+			if(!(msg instanceof ObjectMessage))
+				return;
+			
+			ObjectMessage objMsg = (ObjectMessage) msg;
+			
+			synchronized(CommunicationHandler.this) {
+				try {
+					classes.put(objMsg.getJMSMessageID(), objMsg.getObject());
+					System.out.println(objMsg.getObject().toString());
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		}
 	}
 }

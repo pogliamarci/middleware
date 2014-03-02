@@ -183,6 +183,7 @@ public class ReplyManager {
 				reply = session.createObjectMessage();
 				reply.setJMSCorrelationID(msg.getJMSMessageID());
 				reply.setObject(new String("Ci si prova"));
+				Queue tempQueue = (Queue) msg.getJMSReplyTo();
 				MessageProducer prod = session.createProducer(tempQueue);
 				prod.send(reply);
 			} catch (JMSException e) {
