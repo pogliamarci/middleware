@@ -7,13 +7,16 @@
 
 package it.polimi.distsys.dcdserver.worker;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import it.polimi.distsys.dcdserver.jobs.Job;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -152,7 +155,10 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		@Override
 		public void run() {
 			try {
-				handler.sendResult((Job) msg.getObject(), msg.getJMSMessageID(), msg.getJMSReplyTo());
+				Job job = (Job) msg.getObject();
+				Serializable ret = null; //= job.run();
+				
+				handler.sendResult(ret, msg.getJMSMessageID(), msg.getJMSReplyTo());
 			} catch (JMSException e) {
 				Logger l = Logger.getLogger(this.getClass().getName());
 				l.log(Level.WARNING, "Error sending reply: " + e.getMessage());

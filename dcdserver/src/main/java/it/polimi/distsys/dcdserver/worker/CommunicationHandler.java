@@ -1,15 +1,9 @@
 package it.polimi.distsys.dcdserver.worker;
 
-import it.polimi.distsys.dcdserver.jobs.Job;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -46,18 +40,13 @@ public class CommunicationHandler {
 		requests.add(msgId);
 	}
 	
-	public synchronized void sendResult(Job job, String msgId, Destination ReplyTo)
+	public synchronized void sendResult(Serializable ret, String msgId, Destination ReplyTo)
 			throws JMSException {
 		
 		ObjectMessage reply = locSession.createObjectMessage();
 		reply.setJMSCorrelationID(msgId);
 		Queue tempQueue = (Queue) ReplyTo;
-		try {
-			//Serializable ret = job.run();
-			//reply.setObject(ret);
-		} catch(Exception e) {
-			reply.setObject(new ExecutionException(e));
-		}
+		reply.setObject(ret);
 		MessageProducer prod = locSession.createProducer(tempQueue);
 		prod.send(reply);
 	}
