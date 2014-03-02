@@ -31,11 +31,11 @@ public class PrimeJob implements Job {
 		
 		for(i = 2; i <= num / 2; i++) {
 			if(num % i == 0) {
-				result = new String("is not prime");
+				result = "is not prime";
 			}
 		}
 		if(i > num/2) {
-			result = new String("is prime");
+			result = "is prime";
 		}
 		
 		System.out.println(str + "end");

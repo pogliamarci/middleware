@@ -1,6 +1,9 @@
 Grid computing with JMS
 =======================
 
+#### (basic version, without dynamic code downloading)
+
+
 Implement an infrastructure to manage jobs submitted to a cluster of hosts.
 Each client may submit a job, represented as an object that offers the
 following interface:
@@ -31,7 +34,7 @@ This document assumes that JORAM is already installed in the `$JORAM_HOME` direc
 ## Execution
 
 * Make sure that the `$JORAM_HOME` and `$JAVA_HOME` environment variables are set to the right locations.
-* Generate `jmscluster-1.0.jar` using Maven:
+* Generate `jmsgrid-1.0.jar` using Maven:
 ```
 mvn package
 ```
@@ -55,4 +58,4 @@ Note: the provided scripts to run the client and the servers are just a wrapper 
 ```
 java -cp $JARFILE:$JORAM_HOME/ship/bundle/* <className> <parameters>
 ```
-`className` is `it.polimi.distsys.jmscluster.worker.Server` for a worker, `it.polimi.distsys.jmscluster.client.Client` for a server and `it.polimi.distsys.jmscluster.utils.LocalAdmin` for the utility to create the administered objects.
+`className` is `it.polimi.jmsgrid.worker.Server` for a worker, `it.polimi.jmsgrid.client.Client` for a server and `it.polimi.jmsgrid.utils.LocalAdmin` for the utility to create the administered objects.

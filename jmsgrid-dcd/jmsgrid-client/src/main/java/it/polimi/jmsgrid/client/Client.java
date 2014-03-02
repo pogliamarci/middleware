@@ -48,7 +48,7 @@ public final class Client {
 			client.connect();
 			List<Future<Serializable>> results = new ArrayList<Future<Serializable>>(Arrays.asList(
 					client.submitJobAsync(new HelloWorldJob("JOB 1")),
-					client.submitJobAsync(new McmJob("JOB 2", 253620135, 540465346)),
+					client.submitJobAsync(new McmJob("JOB 2", 2535, 54534)),
 					client.submitJobAsync(new PauseJob("JOB 3", 5000)),
 					client.submitJobAsync(new PrimeJob("JOB 4", 17920157)),
 					client.submitJobAsync(new PauseJob("JOB 5", 5000)),

@@ -8,5 +8,7 @@ academic year 2013-2014.
 The project is composed by three assignments, to be chosen among a list of five.
 
 * [Parallel image normalization with MPI & OpenMP](imgnormalize/README.md)
-* [Grid Computing with JMS](jmscluster/README.md)
+* Grid computing with JMS:
+  * [basic version, without code downloading](jmsgrid/README.md)
+  * [version with code downloading](jmsgrid-dcd/README.md)
 * [Power monitoring with Hadoop](hadoop/README.md)

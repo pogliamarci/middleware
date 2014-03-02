@@ -1,6 +1,8 @@
 Grid computing with JMS
 =======================
 
+#### (version with dynamic code downloading)
+
 Implement an infrastructure to manage jobs submitted to a cluster of hosts.
 Each client may submit a job, represented as an object that offers the
 following interface:
@@ -31,10 +33,14 @@ This document assumes that JORAM is already installed in the `$JORAM_HOME` direc
 ## Execution
 
 * Make sure that the `$JORAM_HOME` and `$JAVA_HOME` environment variables are set to the right locations.
-* Generate `jmscluster-1.0.jar` using Maven:
+* The source code is divided in three different project: one for the client-specific components, one for the server-side components and a third one for the shared classes and interfaces. The three components can be built and packaged at once just building the top-level project:
 ```
 mvn package
 ```
+This will generate some `.jar` files. The ones of interest are:
+  * `jmsgrid-client/target/jmsgrid-client-1.0-jar-with-dependencies.jar` (the client)
+  * `jmsgrid-worker/target/jmsgrid-worker-1.0-jar-with-dependencies.jar` (the worker and the localAdmin)
+Notice that those files already contain the `util` project but not the `JMS` and `JORAM` related classes.
 * Start JORAM. The `single_server.sh` script starts the middleware (listening to `localhost:16010`) and the JNDI server (on `localhost:16400`). For distributed configurations, refer to the JORAM documentation.
 * Create the administered objects. On one host only, run (from the directory where the jar file is present):
 ```
@@ -50,9 +56,12 @@ where `id` must be an unique numeric identifier for the server. The other parame
 ```
 ./client.sh [jndiHost] [jndiPort]
 ```
+The sample client will try to run on the available server(s) some `Job`s of variable duration. The code of the classes that are submitted is not in the server's classpath: it will be dynamically requested via a JMS message to the client and subsequently loaded on the server's JVM.
 
 Note: the provided scripts to run the client and the servers are just a wrapper to:
 ```
 java -cp $JARFILE:$JORAM_HOME/ship/bundle/* <className> <parameters>
 ```
-`className` is `it.polimi.distsys.jmscluster.worker.Server` for a worker, `it.polimi.distsys.jmscluster.client.Client` for a server and `it.polimi.distsys.jmscluster.utils.LocalAdmin` for the utility to create the administered objects.
+`className` is `it.polimi.jmsgrid.worker.Server` for a worker, `it.polimi.jmsgrid.client.Client` for a server and `it.polimi.jmsgrid.admin.LocalAdmin` for the utility to create the administered objects.
+
+*Important notice* This is only a proof-of-concept project, intended only to demonstrate the use of JMS. The administration class will create JMS topics and queue without authentication, and the server will load and run source code from an untrusted (and not authenticated) client, without any sandboxing. Be careful.

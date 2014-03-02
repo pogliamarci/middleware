@@ -36,7 +36,7 @@ public class McmJob implements Job {
 				base = num1;
 
 			for(long i = base; i <= num1 * num2; i++)
-				if(i % num1 == 0 && i % num1 == 0) {
+				if(i % num1 == 0 && i % num2 == 0) {
 					mcm = i;
 					break;
 				}
