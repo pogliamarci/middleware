@@ -190,7 +190,7 @@ public class ReplyManager {
 					
 					InputStream is =
 							ClassLoader.getSystemClassLoader().getResourceAsStream(resourceName);  
-					ByteArrayOutputStream byteStream = new ByteArrayOutputStream();  
+					ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		            int nextValue = is.read();
 		            
 		            while (-1 != nextValue) {  

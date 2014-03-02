@@ -13,7 +13,7 @@ public class CustomClassLoader extends ClassLoader {
 	
 	
 	public CustomClassLoader(CommunicationHandler handler, ObjectMessage msg, ClassLoader classLoader) {
-		super(classLoader);
+		super(CustomClassLoader.class.getClassLoader());
 
 		this.handler = handler;
 		this.msg = msg;
