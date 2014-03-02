@@ -7,8 +7,6 @@
 
 package it.polimi.distsys.dcd.client;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,16 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSession;
-import javax.jms.Session;
-import javax.jms.TextMessage;
 
 /**
  * Manager for the temporary queue to receive the replies. An object of this
@@ -44,20 +33,11 @@ public class ReplyManager {
 	private Map<String, Serializable> results;
 	private Set<String> outstandingReplies;
 	private Set<String> toBeDiscarded;
-	private QueueSession session;
-	private QueueReceiver recv;
 	
 	public ReplyManager() {
 		results = new HashMap<String, Serializable>();
 		outstandingReplies = new HashSet<String>();
 		toBeDiscarded = new HashSet<String>();
-	}
-
-	public void listen(QueueConnection conn, Queue tempQueue) throws JMSException {
-		disconnect();
-		session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-		recv = session.createReceiver(tempQueue);
-		recv.setMessageListener(new ReplyMessageListener());
 	}
 
 	public synchronized Serializable get(String corrId)
@@ -96,20 +76,7 @@ public class ReplyManager {
 	public synchronized void signalJobPosted(String id) {
 		outstandingReplies.add(id);
 	}
-	
-	/**
-	 * Stop the listener thread and close the JMS session.
-	 */
-	public void disconnect() throws JMSException {
-		if(session != null) {
-			session.close();
-		}
-		if(recv != null)
-		{
-			recv.setMessageListener(null);
-			recv.close();
-		}
-	}
+
 
 	/**
 	 * Waits that all the jobs have been completed by the server, and that
@@ -140,7 +107,7 @@ public class ReplyManager {
 		}
 	}
 	
-	private synchronized void onMessage(ObjectMessage msg) {
+	public synchronized void onMessage(ObjectMessage msg) {
 		try {
 			String corrId = msg.getJMSCorrelationID();
 			
@@ -163,49 +130,6 @@ public class ReplyManager {
 		return ret;
 	}
 	
-	private class ReplyMessageListener implements MessageListener {
-		@Override
-		public void onMessage(Message msg) {
-			if (!(msg instanceof ObjectMessage)) {
-				if (msg instanceof TextMessage)
-					handleRemoteLookup((TextMessage) msg);
-				return;
-			}
-			
-			ReplyManager.this.onMessage((ObjectMessage) msg);
-		}
-		
-		private void handleRemoteLookup(TextMessage msg) {
-			ObjectMessage reply;
-			try {
-				reply = session.createObjectMessage();
-				reply.setJMSCorrelationID(msg.getJMSMessageID());
-				
-				try {
-					String resourceName = msg.getText().replace('.', '/') + ".class";
-					
-					InputStream is = this.getClass().getClassLoader().getResourceAsStream(resourceName);
-					ByteArrayOutputStream byteStream = new ByteArrayOutputStream();  
-		            int nextValue = is.read();  
-		            
-		            while (-1 != nextValue) {  
-		                byteStream.write(nextValue);  
-		                nextValue = is.read();  
-		            }  
+	
 
-		            byte[] classByte = byteStream.toByteArray(); 
-					
-					reply.setObject(classByte);
-				} catch (Exception e) {  
-					System.err.println("Unable to load class " + msg.getText());  
-				}
-
-				Queue tempQueue = (Queue) msg.getJMSReplyTo();
-				MessageProducer prod = session.createProducer(tempQueue);
-				prod.send(reply);
-			} catch (JMSException e) {
-				e.printStackTrace();
-			}
-		}
-	}
 }

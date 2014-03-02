@@ -8,16 +8,13 @@ public class CodeOnDemandClassLoader extends ClassLoader {
 	private Destination queue;
 	
 	public CodeOnDemandClassLoader(CommunicationHandler handler, Destination queue) {
-		super(CodeOnDemandClassLoader.class.getClassLoader());
-
-		System.out.println("ClassLoader CREATED [" + queue + "]");
-		
+		super(CodeOnDemandClassLoader.class.getClassLoader());	
 		this.handler = handler;
 		this.queue = queue;
 	}
 	
 	@Override
-	public synchronized Class<?> loadClass(String className, boolean resolveIt) throws ClassNotFoundException {
+	public Class<?> loadClass(String className, boolean resolveIt) throws ClassNotFoundException {
 		
 		Class<?> result = loadClass(className);
 		
@@ -30,50 +27,33 @@ public class CodeOnDemandClassLoader extends ClassLoader {
 	}
 	
 	@Override
-	public synchronized Class<?> findClass(String className) throws ClassNotFoundException {
+	public Class<?> findClass(String className) throws ClassNotFoundException {
 		return loadClass(className);
 	}
 	
-	// Main function called by client to resolve class
 	@Override
-	public synchronized Class<?> loadClass(String className) throws ClassNotFoundException {
-
-		Class<?> result;
-		byte classData[];
-		
-		System.out.println("Load Class CALLED with " + className + " as a parameter. [" + queue + "]");
-		
+	public Class<?> loadClass(String className) throws ClassNotFoundException {
 		/* Call super class loader */
 		try {
 			return super.findSystemClass(className); 
-		} catch (ClassNotFoundException e) {
-			System.err.println("WARNING: Not a class parent classloader can load.");  
+		} catch (ClassNotFoundException e) { 
+			return loadClassImpl(className);
 		}
-
-		System.err.println("Attempting to load class "+className+" from client...");
-		
-		/* Try to load it from our repository */
-		classData = getClassFromClient(className);
+	}
+	
+	private Class<?> loadClassImpl(String className) throws ClassNotFoundException {
+		/* Ask class to client */
+		byte classData[] = handler.lookupClass(className, queue);
 		if (classData == null) {
-			System.out.println("Class data is NULL");
 			throw new ClassNotFoundException();
 		}
-		
-		System.err.println("Class "+className+" loaded.");
-		
+
 		/* Define the class */
-		result = defineClass(className, classData, 0, classData.length, null);
+		Class<?> result = defineClass(className, classData, 0, classData.length, null);
 		if (result == null) {
-			System.err.println("Format Error");
 			throw new ClassFormatError();
 		}
-		
 		return result;  
-	}
-
-	private byte[] getClassFromClient(String className) {
-		System.out.println("Requesting to client class " + className);
-		return handler.lookupClass(className, queue);
 	}
 
 	public void setDestination(Destination destination) {

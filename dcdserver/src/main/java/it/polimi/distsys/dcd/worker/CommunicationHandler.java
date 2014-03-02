@@ -3,6 +3,7 @@ package it.polimi.distsys.dcd.worker;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -22,6 +23,8 @@ public class CommunicationHandler {
 	private TemporaryQueue classesQueue;
 	private Map<String, Serializable> classes;
 	
+    private static final long RESOURCE_REQUEST_TIMEOUT_MILLIS = 10000;
+	
 	public CommunicationHandler(QueueConnection jobsConn) throws JMSException {
 		classes = new HashMap<String, Serializable>();
 		
@@ -34,7 +37,7 @@ public class CommunicationHandler {
 		classesRecv.setMessageListener(new ClassesListener());
 	}
 	
-	public synchronized byte[] lookupClass(String className, Destination ReplyTo) {
+	public synchronized byte[] lookupClass(String className, Destination ReplyTo) throws ClassNotFoundException {
 		TextMessage reply;
 		String msgId;
 		Serializable ret = null;
@@ -48,13 +51,27 @@ public class CommunicationHandler {
 			MessageProducer prod = session.createProducer(tempQueue);
 			prod.send(reply);
 			msgId = reply.getJMSMessageID();
+
 			
-			System.out.println("wait "+msgId);
+			long initial = System.currentTimeMillis();
+
 			
 			try {
-				while(!classes.containsKey(msgId)) wait();
+				while (!classes.containsKey(msgId)) {
+					long now = System.currentTimeMillis();
+					if (now < initial) {
+						now = initial; // sanity check...
+					}
+					if ((now - initial) < RESOURCE_REQUEST_TIMEOUT_MILLIS) {
+						wait(RESOURCE_REQUEST_TIMEOUT_MILLIS - (now - initial));
+					} else {
+						throw new ClassNotFoundException(
+								"Timeout elapsed requesting class from client. Class requested was "
+										+ className);
+					}
+				}
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				throw new ClassNotFoundException(e.getMessage());
 			}
 			
 			ret = classes.get(msgId);
@@ -87,10 +104,7 @@ public class CommunicationHandler {
 	}
 
 	private class ClassesListener implements MessageListener {
-		
-		public ClassesListener() {
-		}
-		
+
 		@Override
 		public void onMessage(Message msg) {
 			
@@ -101,9 +115,6 @@ public class CommunicationHandler {
 			
 			try {
 				classes.put(objMsg.getJMSMessageID(), objMsg.getObject());
-				
-				System.out.println("recv "+msg.getJMSCorrelationID());
-				
 				CommunicationHandler.this.addClass((ObjectMessage) msg);
 			} catch (JMSException e) {
 				e.printStackTrace();

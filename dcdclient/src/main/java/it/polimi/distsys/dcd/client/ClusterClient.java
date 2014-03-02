@@ -48,6 +48,7 @@ public class ClusterClient {
 	private MessageProducer jobQueuePublisher;
 	private ReplyManager listener;
 	private InitialContext ictx;
+	private ReplyDispatcher dispatcher;
 	
 	public ClusterClient(InitialContext ictx) {
 		connected = false;
@@ -72,7 +73,8 @@ public class ClusterClient {
 			session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			tempQueue = session.createTemporaryQueue();
 			listener = new ReplyManager();
-			listener.listen(conn, tempQueue);
+			dispatcher = new ReplyDispatcher(listener, new CodeOnDemandClient(conn));
+			dispatcher.listen(conn, tempQueue);
 			jobQueuePublisher = session.createSender(jobsQueue);
 			conn.start();
 		}  catch (JMSException e) {
@@ -111,7 +113,7 @@ public class ClusterClient {
 			Thread.currentThread().interrupt();
 		}
 		try {
-			listener.disconnect();
+			dispatcher.disconnect();
 			conn.stop();
 		} catch (JMSException e) {
 			throw new ConnectionException("can't stop connection", e);
