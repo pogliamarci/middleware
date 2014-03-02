@@ -188,10 +188,10 @@ public class ReplyManager {
 				try {
 					String resourceName = msg.getText().replace('.', '/') + ".class";
 					
-					FileInputStream is =
-							new FileInputStream("/Users/Allucinator/Documents/middleware/dcdclient/target/classes/"+resourceName);  
+					InputStream is =
+							ClassLoader.getSystemClassLoader().getResourceAsStream(resourceName);  
 					ByteArrayOutputStream byteStream = new ByteArrayOutputStream();  
-		            int nextValue = is.read();  
+		            int nextValue = is.read();
 		            
 		            while (-1 != nextValue) {  
 		                byteStream.write(nextValue);  
@@ -202,7 +202,7 @@ public class ReplyManager {
 					
 					reply.setObject(classByte);
 				} catch (Exception e) {  
-					System.out.println("Unable to load class " + msg.getText());  
+					System.err.println("Unable to load class " + msg.getText());  
 				}
 
 				Queue tempQueue = (Queue) msg.getJMSReplyTo();
