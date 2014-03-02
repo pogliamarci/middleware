@@ -15,9 +15,11 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
@@ -41,6 +43,7 @@ public class ReplyManager {
 	private Set<String> outstandingReplies;
 	private Set<String> toBeDiscarded;
 	private QueueSession session;
+	private Queue tempQueue;
 	private QueueReceiver recv;
 	
 	public ReplyManager() {
@@ -53,6 +56,7 @@ public class ReplyManager {
 		disconnect();
 		session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 		recv = session.createReceiver(tempQueue);
+		this.tempQueue = tempQueue;
 		recv.setMessageListener(new ReplyMessageListener());
 	}
 
@@ -162,23 +166,28 @@ public class ReplyManager {
 	private class ReplyMessageListener implements MessageListener {
 		@Override
 		public void onMessage(Message msg) {
-			if (!(msg instanceof ObjectMessage))
-				if (msg instanceof TextMessage) {
-					try {
-						handleRemoteLookup(((TextMessage) msg).getText());
-					} catch (JMSException e) {
-						e.printStackTrace();
-					}
-				} else
-					return;
+			if (!(msg instanceof ObjectMessage)) {
+				if (msg instanceof TextMessage)
+					handleRemoteLookup((TextMessage) msg);
+				return;
+			}
 			
 			ReplyManager.this.onMessage((ObjectMessage) msg);
 		}
 
 		
-		private void handleRemoteLookup(String className) {
-			//TODO
-			System.out.println("LOOKUP!");
+		private void handleRemoteLookup(TextMessage msg) {
+			
+			ObjectMessage reply;
+			try {
+				reply = session.createObjectMessage();
+				reply.setJMSCorrelationID(msg.getJMSMessageID());
+				reply.setObject(new String("Ci si prova"));
+				MessageProducer prod = session.createProducer(tempQueue);
+				prod.send(reply);
+			} catch (JMSException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }

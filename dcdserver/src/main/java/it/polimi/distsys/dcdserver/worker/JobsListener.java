@@ -10,13 +10,12 @@ package it.polimi.distsys.dcdserver.worker;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import it.polimi.distsys.dcdserver.jobs.Job;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -74,11 +73,12 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 			QueueSession qs = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 			QueueReceiver jobsRecv = qs.createReceiver(jobsQueue);
 			
-			QueueSession locSession = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-			TemporaryQueue classesQueue = locSession.createTemporaryQueue();
-			QueueReceiver classesRecv = locSession.createReceiver(classesQueue);
-			
-			handler = new CommunicationHandler(locSession);
+			try {
+				handler = new CommunicationHandler(jobsConn);
+			} catch (JMSException e) {
+				Logger l = Logger.getLogger(this.getClass().getName());
+				l.log(Level.WARNING, "Error sending reply: " + e.getMessage());
+			}
 			
 			jobsConn.start();
 			while(!shouldStop()) {
@@ -155,9 +155,13 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		@Override
 		public void run() {
 			try {
-				Job job = (Job) msg.getObject();
-				Serializable ret = null; //= job.run();
-				
+				Serializable ret;
+				try {
+					Job job = (Job) msg.getObject();
+					ret = null; //= job.run();
+				} catch(Exception e) {
+					ret = new ExecutionException(e);
+				}
 				handler.sendResult(ret, msg.getJMSMessageID(), msg.getJMSReplyTo());
 			} catch (JMSException e) {
 				Logger l = Logger.getLogger(this.getClass().getName());
