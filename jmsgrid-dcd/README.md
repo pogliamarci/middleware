@@ -62,6 +62,6 @@ Note: the provided scripts to run the client and the servers are just a wrapper 
 ```
 java -cp $JARFILE:$JORAM_HOME/ship/bundle/* <className> <parameters>
 ```
-`className` is `it.polimi.distsys.jmscluster.worker.Server` for a worker, `it.polimi.distsys.jmscluster.client.Client` for a server and `it.polimi.distsys.jmscluster.utils.LocalAdmin` for the utility to create the administered objects.
+`className` is `it.polimi.jmsgrid.worker.Server` for a worker, `it.polimi.jmsgrid.client.Client` for a server and `it.polimi.jmsgrid.admin.LocalAdmin` for the utility to create the administered objects.
 
 *Important notice* This is only a proof-of-concept project, intended only to demonstrate the use of JMS. The administration class will create JMS topics and queue without authentication, and the server will load and run source code from an untrusted (and not authenticated) client, without any sandboxing. Be careful.
