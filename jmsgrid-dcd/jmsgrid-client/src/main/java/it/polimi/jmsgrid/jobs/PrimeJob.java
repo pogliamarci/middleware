@@ -29,12 +29,14 @@ public class PrimeJob implements Job {
 		String result = null;
 		long i;
 		
-		for(i = 2; i <= num / 2; i++)
+		for(i = 2; i <= num / 2; i++) {
 			if(num % i == 0) {
 				result = new String("is not prime");
 			}
-		if(i > num/2)
+		}
+		if(i > num/2) {
 			result = new String("is prime");
+		}
 		
 		System.out.println(str + "end");
 		return str+": "+num+" "+result;

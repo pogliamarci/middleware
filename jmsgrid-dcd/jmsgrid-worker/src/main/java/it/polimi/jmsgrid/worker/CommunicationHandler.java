@@ -3,6 +3,8 @@ package it.polimi.jmsgrid.worker;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -24,7 +26,8 @@ public class CommunicationHandler {
 	private Map<String, byte[]> classes;
 
 	private static final long RESOURCE_REQUEST_TIMEOUT_MILLIS = 10000;
-
+	private static final Logger LOGGER = Logger.getLogger(CommunicationHandler.class.getName());
+	
 	public CommunicationHandler(QueueConnection jobsConn) throws JMSException {
 		
 		classes = new HashMap<String, byte[]>();
@@ -36,13 +39,13 @@ public class CommunicationHandler {
 		classesRecv.setMessageListener(new ClassesListener());
 	}
 
-	public synchronized byte[] lookupClass(String className, Destination ReplyTo)
+	public synchronized byte[] lookupClass(String className, Destination dest)
 			throws ClassNotFoundException {
 		TextMessage reply;
 		String msgId;
 		try {
 			reply = session.createTextMessage();
-			Queue tempQueue = (Queue) ReplyTo;
+			Queue tempQueue = (Queue) dest;
 
 			reply.setJMSReplyTo(classesQueue);
 			reply.setText(className);
@@ -62,7 +65,7 @@ public class CommunicationHandler {
 			classes.put(msg.getJMSCorrelationID(), (byte[]) msg.getObject());
 			notifyAll();
 		} catch (JMSException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.WARNING, "Add class: Error interpreting JMS message - " + e.getMessage());
 		}
 	}
 
@@ -102,8 +105,9 @@ public class CommunicationHandler {
 		@Override
 		public void onMessage(Message msg) {
 
-			if (!(msg instanceof ObjectMessage))
+			if (!(msg instanceof ObjectMessage)) {
 				return;
+			}
 
 			addClass((ObjectMessage) msg);
 		}

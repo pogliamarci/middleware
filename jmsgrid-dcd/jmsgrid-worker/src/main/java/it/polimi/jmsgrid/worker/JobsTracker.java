@@ -47,7 +47,6 @@ public class JobsTracker {
 	
 	public void join(int n, int jobs) {
 		if(!information.containsKey(n)) {
-			// System.out.println(n + " joined with " + jobs + "jobs.");
 			information.put(n, new AtomicInteger(jobs));
 			informListeners();
 		}
@@ -59,7 +58,6 @@ public class JobsTracker {
 	}
 
 	public void update(int n, int cur) {
-		// System.out.println(n + " has " + cur + " jobs (I have " + ongoingJobs.get() + ")");
 		AtomicInteger ai = information.get(n);
 		if(ai != null) {
 			ai.set(cur);

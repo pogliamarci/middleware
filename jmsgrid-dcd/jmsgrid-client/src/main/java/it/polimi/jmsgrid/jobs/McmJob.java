@@ -32,16 +32,18 @@ public class McmJob implements Job {
 		long base = num1;
 		
 		if(num1 != 0 && num2 != 0) {
-			if(num1 < num2)
+			if(num1 < num2) {
 				base = num2;
-			else
+			} else {
 				base = num1;
+			}
 
-			for(long i = base; i <= num1 * num2; i++)
+			for(long i = base; i <= num1 * num2; i++) {
 				if(i % num1 == 0 && i % num1 == 0) {
 					mcm = i;
 					break;
 				}
+			}
 		}
 		
 		System.out.println(str + "end");
