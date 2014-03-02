@@ -10,5 +10,5 @@ The project is composed by three assignments, to be chosen among a list of five.
 * [Parallel image normalization with MPI & OpenMP](imgnormalize/README.md)
 * Grid computing with JMS:
   * [basic version, without code downloading](jmsgrid/README.md)
-  * [version with code downloading](jmsgrid-dsd/README.md)
+  * [version with code downloading](jmsgrid-dcd/README.md)
 * [Power monitoring with Hadoop](hadoop/README.md)
