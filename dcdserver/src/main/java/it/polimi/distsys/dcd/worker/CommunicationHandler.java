@@ -21,30 +21,29 @@ import javax.jms.TextMessage;
 public class CommunicationHandler {
 	private QueueSession session;
 	private TemporaryQueue classesQueue;
-	private Map<String, Serializable> classes;
-	
-    private static final long RESOURCE_REQUEST_TIMEOUT_MILLIS = 10000;
-	
+	private Map<String, byte[]> classes;
+
+	private static final long RESOURCE_REQUEST_TIMEOUT_MILLIS = 10000;
+
 	public CommunicationHandler(QueueConnection jobsConn) throws JMSException {
-		classes = new HashMap<String, Serializable>();
+		
+		classes = new HashMap<String, byte[]>();
 		
 		session = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-		
 		QueueSession locSession = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 		classesQueue = locSession.createTemporaryQueue();
 		QueueReceiver classesRecv = locSession.createReceiver(classesQueue);
-		
 		classesRecv.setMessageListener(new ClassesListener());
 	}
-	
-	public synchronized byte[] lookupClass(String className, Destination ReplyTo) throws ClassNotFoundException {
+
+	public synchronized byte[] lookupClass(String className, Destination ReplyTo)
+			throws ClassNotFoundException {
 		TextMessage reply;
 		String msgId;
-		Serializable ret = null;
 		try {
 			reply = session.createTextMessage();
 			Queue tempQueue = (Queue) ReplyTo;
-			
+
 			reply.setJMSReplyTo(classesQueue);
 			reply.setText(className);
 
@@ -52,49 +51,22 @@ public class CommunicationHandler {
 			prod.send(reply);
 			msgId = reply.getJMSMessageID();
 
-			
-			long initial = System.currentTimeMillis();
-
-			
-			try {
-				while (!classes.containsKey(msgId)) {
-					long now = System.currentTimeMillis();
-					if (now < initial) {
-						now = initial; // sanity check...
-					}
-					if ((now - initial) < RESOURCE_REQUEST_TIMEOUT_MILLIS) {
-						wait(RESOURCE_REQUEST_TIMEOUT_MILLIS - (now - initial));
-					} else {
-						throw new ClassNotFoundException(
-								"Timeout elapsed requesting class from client. Class requested was "
-										+ className);
-					}
-				}
-			} catch (InterruptedException e) {
-				throw new ClassNotFoundException(e.getMessage());
-			}
-			
-			ret = classes.get(msgId);
-			classes.remove(msgId);
+			return getAndRemove(msgId);
 		} catch (JMSException e) {
-			e.printStackTrace();
+			throw new ClassNotFoundException("JMS error " + e.getMessage());
 		}
-		
-		return (byte[]) ret;
 	}
-	
+
 	public synchronized void addClass(ObjectMessage msg) {
 		try {
-			classes.put(msg.getJMSCorrelationID(), msg.getObject());
+			classes.put(msg.getJMSCorrelationID(), (byte[]) msg.getObject());
 			notifyAll();
 		} catch (JMSException e) {
 			e.printStackTrace();
 		}
 	}
-	
-	public synchronized void sendResult(Serializable ret, String msgId, Destination ReplyTo)
-			throws JMSException {
-		
+
+	public synchronized void sendResult(Serializable ret, String msgId, Destination ReplyTo) throws JMSException {
 		ObjectMessage reply = session.createObjectMessage();
 		reply.setJMSCorrelationID(msgId);
 		Queue tempQueue = (Queue) ReplyTo;
@@ -102,23 +74,38 @@ public class CommunicationHandler {
 		MessageProducer prod = session.createProducer(tempQueue);
 		prod.send(reply);
 	}
+	
+	private synchronized byte[] getAndRemove(String msgId) throws ClassNotFoundException {
+		long initial = System.currentTimeMillis();
+		while (!classes.containsKey(msgId)) {
+			long now = System.currentTimeMillis();
+			if (now < initial) {
+				now = initial; // sanity check...
+			}
+			if ((now - initial) < RESOURCE_REQUEST_TIMEOUT_MILLIS) {
+				try {
+					wait(RESOURCE_REQUEST_TIMEOUT_MILLIS - (now - initial));
+				} catch (InterruptedException e) {
+					throw new ClassNotFoundException(e.getMessage());
+				}
+			} else {
+				throw new ClassNotFoundException("Timeout elapsed requesting class from client");
+			}
+		}
+
+		byte[] ret = classes.get(msgId);
+		classes.remove(msgId);
+		return ret;
+	}
 
 	private class ClassesListener implements MessageListener {
-
 		@Override
 		public void onMessage(Message msg) {
-			
-			if(!(msg instanceof ObjectMessage))
+
+			if (!(msg instanceof ObjectMessage))
 				return;
-			
-			ObjectMessage objMsg = (ObjectMessage) msg;
-			
-			try {
-				classes.put(objMsg.getJMSMessageID(), objMsg.getObject());
-				CommunicationHandler.this.addClass((ObjectMessage) msg);
-			} catch (JMSException e) {
-				e.printStackTrace();
-			}
+
+			addClass((ObjectMessage) msg);
 		}
 	}
 }
