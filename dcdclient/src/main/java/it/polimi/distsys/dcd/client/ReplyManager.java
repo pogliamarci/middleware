@@ -8,8 +8,6 @@
 package it.polimi.distsys.dcd.client;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -17,8 +15,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -188,8 +184,7 @@ public class ReplyManager {
 				try {
 					String resourceName = msg.getText().replace('.', '/') + ".class";
 					
-					FileInputStream is =
-							new FileInputStream("/Users/Allucinator/Documents/middleware/dcdclient/target/classes/"+resourceName);  
+					InputStream is = this.getClass().getClassLoader().getResourceAsStream(resourceName);
 					ByteArrayOutputStream byteStream = new ByteArrayOutputStream();  
 		            int nextValue = is.read();  
 		            

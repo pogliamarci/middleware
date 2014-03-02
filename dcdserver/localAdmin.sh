@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JARFILE=jmscluster-1.0.jar
+JARFILE=dcdserver-1.0.jar
 
 host=localhost
 port=16010
@@ -30,4 +30,4 @@ if [ ! -r "$JORAM_HOME"/samples/bin/clean.sh ]; then
   exit 1
 fi
 
-exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.utils.LocalAdmin $host $port $jndiHost $jndiPort
+exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.dcd.utils.LocalAdmin $host $port $jndiHost $jndiPort

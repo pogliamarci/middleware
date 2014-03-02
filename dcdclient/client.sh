@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JARFILE=jmscluster-1.0.jar
+JARFILE=dcdclient-1.0.jar
 
 
 # Verify if JORAM_HOME is well defined
@@ -10,5 +10,5 @@ if [ ! -r "$JORAM_HOME"/samples/bin/clean.sh ]; then
   exit 1
 fi
 
-exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.client.Client $1 $2
+exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.dcd.client.Client $1 $2
 

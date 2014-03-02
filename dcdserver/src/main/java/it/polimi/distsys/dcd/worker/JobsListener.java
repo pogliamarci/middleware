@@ -150,15 +150,22 @@ public class JobsListener extends Thread implements ServerStatusListener, Messag
 		JobExecutor(CommunicationHandler handler, ObjectMessage msg) {
 			this.msg = msg;
 			this.handler = handler;
-			if(getContextClassLoader() instanceof CustomClassLoader)
-				setContextClassLoader(new CustomClassLoader(handler, msg, getContextClassLoader().getParent()));
-			else
-				setContextClassLoader(new CustomClassLoader(handler, msg, getContextClassLoader()));
+			//if(getContextClassLoader() instanceof CustomClassLoader)
+				
+			//else
+//				setContextClassLoader(new CustomClassLoader(handler, msg, getContextClassLoader()));
 		}
 		
 		@Override
 		public void run() {
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			try {
+				if(cl instanceof CodeOnDemandClassLoader)
+				{
+					((CodeOnDemandClassLoader) cl).setDestination(msg.getJMSReplyTo());
+				} else {
+					Thread.currentThread().setContextClassLoader(new CodeOnDemandClassLoader(handler, msg.getJMSReplyTo()));
+				}
 				Serializable ret;
 				try {
 					Job job = (Job) msg.getObject();

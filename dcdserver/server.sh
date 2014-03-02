@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JARFILE=jmscluster-1.0.jar
+JARFILE=dcdserver-1.0.jar
 
 echo "Starting server ${1}"
 
@@ -11,4 +11,4 @@ if [ ! -r "$JORAM_HOME"/samples/bin/clean.sh ]; then
   exit 1
 fi
 
-exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.jmscluster.worker.Server $1 $2 $3
+exec "${JAVA_HOME}"/bin/java -cp $JARFILE:$JORAM_HOME/ship/bundle/* it.polimi.distsys.dcd.worker.Server $1 $2 $3

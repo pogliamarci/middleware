@@ -1,22 +1,19 @@
 package it.polimi.distsys.dcd.worker;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.jms.Destination;
 
-import javax.jms.JMSException;
-import javax.jms.ObjectMessage;
-
-public class CustomClassLoader extends ClassLoader {
+public class CodeOnDemandClassLoader extends ClassLoader {
 	
 	private CommunicationHandler handler;
-	private ObjectMessage msg;
+	private Destination queue;
 	
-	
-	public CustomClassLoader(CommunicationHandler handler, ObjectMessage msg, ClassLoader classLoader) {
-		super(classLoader);
+	public CodeOnDemandClassLoader(CommunicationHandler handler, Destination queue) {
+		super(CodeOnDemandClassLoader.class.getClassLoader());
 
+		System.out.println("ClassLoader CREATED [" + queue + "]");
+		
 		this.handler = handler;
-		this.msg = msg;
+		this.queue = queue;
 	}
 	
 	@Override
@@ -44,10 +41,11 @@ public class CustomClassLoader extends ClassLoader {
 		Class<?> result;
 		byte classData[];
 		
+		System.out.println("Load Class CALLED with " + className + " as a parameter. [" + queue + "]");
+		
 		/* Call super class loader */
 		try {
-			result = super.findSystemClass(className); 
-			return result;
+			return super.findSystemClass(className); 
 		} catch (ClassNotFoundException e) {
 			System.err.println("WARNING: Not a class parent classloader can load.");  
 		}
@@ -57,6 +55,7 @@ public class CustomClassLoader extends ClassLoader {
 		/* Try to load it from our repository */
 		classData = getClassFromClient(className);
 		if (classData == null) {
+			System.out.println("Class data is NULL");
 			throw new ClassNotFoundException();
 		}
 		
@@ -73,16 +72,11 @@ public class CustomClassLoader extends ClassLoader {
 	}
 
 	private byte[] getClassFromClient(String className) {
-		byte[] classData = null;
-		
-		try {
-			classData = handler.lookupClass(className, msg.getJMSReplyTo());
-		}
-		catch (JMSException e) {
-			Logger l = Logger.getLogger(this.getClass().getName());
-			l.log(Level.WARNING, "Error looking for class: " + e.getMessage());
-		}
-		
-		return classData;
+		System.out.println("Requesting to client class " + className);
+		return handler.lookupClass(className, queue);
+	}
+
+	public void setDestination(Destination destination) {
+		this.queue = destination;
 	}
 }
