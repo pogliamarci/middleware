@@ -1,7 +1,7 @@
 Grid computing with JMS
 =======================
 
-(basic version, without dynamic code downloading)
+#### (basic version, without dynamic code downloading)
 
 
 Implement an infrastructure to manage jobs submitted to a cluster of hosts.
