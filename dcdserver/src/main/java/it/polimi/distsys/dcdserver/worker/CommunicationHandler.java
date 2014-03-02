@@ -2,10 +2,7 @@ package it.polimi.distsys.dcdserver.worker;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -24,11 +21,9 @@ public class CommunicationHandler {
 	private QueueSession session;
 	private TemporaryQueue classesQueue;
 	private Map<String, Serializable> classes;
-	private Set<String> requests;
 	
 	public CommunicationHandler(QueueConnection jobsConn) throws JMSException {
 		classes = new HashMap<String, Serializable>();
-		requests = new HashSet<String>();
 		
 		session = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 		
@@ -39,11 +34,12 @@ public class CommunicationHandler {
 		classesRecv.setMessageListener(new ClassesListener());
 	}
 	
-	public synchronized void lookupClass(String className, String msgId, Destination ReplyTo) {
+	public synchronized byte[] lookupClass(String className, Destination ReplyTo) {
 		TextMessage reply;
+		String msgId;
+		Serializable ret = null;
 		try {
 			reply = session.createTextMessage();
-			reply.setJMSCorrelationID(msgId);
 			Queue tempQueue = (Queue) ReplyTo;
 			
 			reply.setJMSReplyTo(classesQueue);
@@ -51,12 +47,34 @@ public class CommunicationHandler {
 
 			MessageProducer prod = session.createProducer(tempQueue);
 			prod.send(reply);
-
+			msgId = reply.getJMSMessageID();
+			
+			System.out.println("wait "+msgId);
+			
+			try {
+				while(!classes.containsKey(msgId)) wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			System.out.println(classes.get(msgId).toString());
+			
+			ret = classes.get(msgId);
+			classes.remove(msgId);
 		} catch (JMSException e) {
 			e.printStackTrace();
 		}
 		
-		requests.add(msgId);
+		return (byte[]) ret;
+	}
+	
+	public synchronized void addClass(ObjectMessage msg) {
+		try {
+			classes.put(msg.getJMSCorrelationID(), msg.getObject());
+			notifyAll();
+		} catch (JMSException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public synchronized void sendResult(Serializable ret, String msgId, Destination ReplyTo)
@@ -83,15 +101,15 @@ public class CommunicationHandler {
 			
 			ObjectMessage objMsg = (ObjectMessage) msg;
 			
-			synchronized(CommunicationHandler.this) {
-				try {
-					classes.put(objMsg.getJMSMessageID(), objMsg.getObject());
-					System.out.println(objMsg.getObject().toString());
-				} catch (JMSException e) {
-					e.printStackTrace();
-				}
+			try {
+				classes.put(objMsg.getJMSMessageID(), objMsg.getObject());
+				
+				System.out.println("recv "+msg.getJMSCorrelationID());
+				
+				CommunicationHandler.this.addClass((ObjectMessage) msg);
+			} catch (JMSException e) {
+				e.printStackTrace();
 			}
-			
 		}
 	}
 }

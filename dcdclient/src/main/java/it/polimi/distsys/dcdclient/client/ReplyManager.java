@@ -43,7 +43,6 @@ public class ReplyManager {
 	private Set<String> outstandingReplies;
 	private Set<String> toBeDiscarded;
 	private QueueSession session;
-	private Queue tempQueue;
 	private QueueReceiver recv;
 	
 	public ReplyManager() {
@@ -56,7 +55,6 @@ public class ReplyManager {
 		disconnect();
 		session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 		recv = session.createReceiver(tempQueue);
-		this.tempQueue = tempQueue;
 		recv.setMessageListener(new ReplyMessageListener());
 	}
 
@@ -182,7 +180,9 @@ public class ReplyManager {
 			try {
 				reply = session.createObjectMessage();
 				reply.setJMSCorrelationID(msg.getJMSMessageID());
+				
 				reply.setObject(new String("Ci si prova"));
+				
 				Queue tempQueue = (Queue) msg.getJMSReplyTo();
 				MessageProducer prod = session.createProducer(tempQueue);
 				prod.send(reply);

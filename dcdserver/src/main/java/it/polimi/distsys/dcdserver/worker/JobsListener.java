@@ -26,7 +26,6 @@ import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
 import javax.jms.Session;
-import javax.jms.TemporaryQueue;
 
 /**
  * Implements a thread listening for jobs in the jobsQueue and executes them using a thread pool.

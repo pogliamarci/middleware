@@ -2,6 +2,7 @@ package it.polimi.distsys.dcdserver.worker;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
@@ -71,14 +72,17 @@ public class CustomClassLoader extends ClassLoader {
 	}
 
 	private byte[] getClassFromClient(String className) {
+		byte[] classData = null;
+		
 		try {
-			handler.lookupClass(className, msg.getJMSMessageID(), msg.getJMSReplyTo());
+			classData = handler.lookupClass(className, msg.getJMSReplyTo());
+			System.out.println("ricevuto");
 		}
 		catch (JMSException e) {
 			Logger l = Logger.getLogger(this.getClass().getName());
 			l.log(Level.WARNING, "Error looking for class: " + e.getMessage());
 		}
 		
-		return null;
+		return classData;
 	}
 }
