@@ -2,6 +2,12 @@ package it.polimi.jmsgrid.worker;
 
 import javax.jms.Destination;
 
+/**
+ * A ClassLoader which asks the JMS destination specified using the setDestination()
+ * method to send via a JMS message the bytecode of the loaded classes, if not found
+ * locally by the parent classloader.
+ *
+ */
 public class CodeOnDemandClassLoader extends ClassLoader {
 	
 	private CommunicationHandler handler;

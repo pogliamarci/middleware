@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JARFILE=jmsgrid-client/target/jmsgrid-client-1.0-jar-with-dependencies.jar
+JARFILE=jmsgrid-client/jmsgrid-client-1.0.jar
 
 
 # Verify if JORAM_HOME is well defined

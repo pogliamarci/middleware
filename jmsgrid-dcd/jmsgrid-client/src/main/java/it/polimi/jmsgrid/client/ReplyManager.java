@@ -92,8 +92,6 @@ public class ReplyManager {
 		}
 	}
 
-	// In order not to waste resource, if the future is cancelled 
-	// we make sure to discard the result of the call...
 	/**
 	 * When the AsyncResult future is cancelled, we need to make
 	 * sure that the result of the call is never saved in the HashMap, 

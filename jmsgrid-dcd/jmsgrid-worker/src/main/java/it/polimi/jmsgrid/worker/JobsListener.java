@@ -32,7 +32,7 @@ import javax.jms.Session;
 /**
  * Implements a thread listening for jobs in the jobsQueue and executes them using a thread pool.
  * It is enabled or disabled toggling the canAccept method. When the canAccept method
- * is toggled, the action is guaranteed to take place at most after 500ms (RECV_TIMEOUT ms).
+ * is toggled, the action is guaranteed to take place at most after RECV_TIMEOUT ms.
  * 
  * The thread signals to any registered ServerStatusListener when it starts to executes a
  * job or when a job is completed.

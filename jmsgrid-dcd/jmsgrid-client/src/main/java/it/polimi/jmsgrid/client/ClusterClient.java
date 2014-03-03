@@ -12,6 +12,7 @@ import it.polimi.jmsgrid.utils.ConnectionException;
 import it.polimi.jmsgrid.utils.JobSubmissionFailedException;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.jms.JMSException;
@@ -89,6 +90,14 @@ public class ClusterClient {
 		}
 		String corrId = postJob(j);
 		return new AsyncResult(corrId, listener);
+	}
+	
+	public Serializable submitJob(Job j) throws ExecutionException, JobSubmissionFailedException {
+		try {
+			return submitJobAsync(j).get();
+		} catch(InterruptedException e) {
+			throw new ExecutionException(e);
+		}
 	}
 	
 	public void disconnect() throws ConnectionException {

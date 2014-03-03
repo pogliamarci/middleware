@@ -9,6 +9,9 @@ package it.polimi.jmsgrid.worker;
 
 import java.io.Serializable;
 
+/**
+ * The message using to coordinate between workers in order to share load.
+ */
 public class CoordinationMessage implements Serializable {
 
 	private static final long serialVersionUID = -3397173605723850254L;

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JARFILE=jmsgrid-worker/target/jmsgrid-worker-1.0-jar-with-dependencies.jar
+JARFILE=jmsgrid-worker/jmsgrid-worker-1.0.jar
 
 host=localhost
 port=16010

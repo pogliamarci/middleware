@@ -19,6 +19,10 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+/**
+ * Handles the messages sent from the server in order to ask the client
+ * to send the bytecode of a specific class.
+ */
 public class CodeOnDemandClient {
 
 	private Session session;

@@ -22,6 +22,11 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 
+/**
+ * This class manages the messages that are exchanged between workers over the publish-subscribe topic
+ * in order to share load.
+ *
+ */
 public class Coordinator implements MessageListener, JobsSignalListener {
 
 	private JobsTracker tracker;
@@ -31,8 +36,8 @@ public class Coordinator implements MessageListener, JobsSignalListener {
 	private int serverId;
 	private boolean isLeaving;
 	
-	public Coordinator(TopicConnection conn, 
-			Topic coord, int sid, JobsTracker tracker) throws JMSException {
+	public Coordinator(TopicConnection conn, Topic coord, int sid, JobsTracker tracker) throws JMSException {
+
 		final Topic topic = coord;
 		this.serverId = sid;
 		this.connection = conn;

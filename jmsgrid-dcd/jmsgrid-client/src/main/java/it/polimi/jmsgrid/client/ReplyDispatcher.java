@@ -21,6 +21,10 @@ import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+/**
+ * Handles the messages containing the return values of jobs submitted
+ * by this cliend.
+ */
 public class ReplyDispatcher implements MessageListener {
 
 	private static final Logger LOGGER = Logger.getLogger(ReplyManager.class.getName());

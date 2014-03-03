@@ -13,6 +13,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * A Future<Serializable> that waits for the posted job to complete server-side.
+ */
 public class AsyncResult implements Future<Serializable> {
 
 	private final String corrId;

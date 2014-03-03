@@ -20,6 +20,13 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 
+/**
+ * This class manages the communication between the worker and the client(s). It holds the temporary
+ * queue of the server, where the client should send messages containing bytecode for the code on demand
+ * functionalities, and manages the session (send and receive messages).
+ * 
+ * Methods of this class are synchronized due to the JMS session not being thread safe.
+ */
 public class CommunicationHandler {
 	private QueueSession session;
 	private TemporaryQueue classesQueue;
@@ -29,9 +36,7 @@ public class CommunicationHandler {
 	private static final Logger LOGGER = Logger.getLogger(CommunicationHandler.class.getName());
 	
 	public CommunicationHandler(QueueConnection jobsConn) throws JMSException {
-		
 		classes = new HashMap<String, byte[]>();
-		
 		session = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 		QueueSession locSession = jobsConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 		classesQueue = locSession.createTemporaryQueue();
@@ -69,10 +74,11 @@ public class CommunicationHandler {
 		}
 	}
 
-	public synchronized void sendResult(Serializable ret, String msgId, Destination ReplyTo) throws JMSException {
+	public synchronized void sendResult(Serializable ret, String msgId, Destination dest)
+			throws JMSException {
 		ObjectMessage reply = session.createObjectMessage();
 		reply.setJMSCorrelationID(msgId);
-		Queue tempQueue = (Queue) ReplyTo;
+		Queue tempQueue = (Queue) dest;
 		reply.setObject(ret);
 		MessageProducer prod = session.createProducer(tempQueue);
 		prod.send(reply);
